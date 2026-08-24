@@ -1,0 +1,14 @@
+apiVersion: kuudra.io/v1alpha1
+kind: Component
+metadata:
+  namespace: hello-world-demo
+  name: logger
+spec:
+  type: event-handler
+  component: kuudra-official/event-logger
+  desiredState: active
+  options:
+    level: INFO
+    message: "received ${event#hello-world.message}"
+    includeData: true
+

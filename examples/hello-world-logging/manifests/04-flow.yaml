@@ -1,0 +1,26 @@
+apiVersion: kuudra.io/v1alpha1
+kind: Flow
+metadata:
+  namespace: hello-world-demo
+  name: hello-to-log
+spec:
+  desiredState: active
+  imports:
+    source:
+      kind: Component
+      namespace: hello-world-demo
+      name: source
+    ingress:
+      kind: Component
+      namespace: hello-world-demo
+      name: ingress
+    logger:
+      kind: Component
+      namespace: hello-world-demo
+      name: logger
+  edges:
+    - from: source
+      to: ingress
+    - from: ingress
+      to: logger
+

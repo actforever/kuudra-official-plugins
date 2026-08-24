@@ -1,0 +1,16 @@
+apiVersion: kuudra.io/v1alpha1
+kind: Component
+metadata:
+  namespace: hello-world-demo
+  name: ingress
+spec:
+  type: ingress
+  component: core/default
+  desiredState: active
+  options:
+    groupKey: "${event#hello-world.message}"
+    policy: SERIAL
+    groupScope: FLOW_BINDING
+    maxParallelSessions: 1
+    queueCapacity: 32
+

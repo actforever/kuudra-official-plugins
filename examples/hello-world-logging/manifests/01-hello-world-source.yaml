@@ -1,0 +1,12 @@
+apiVersion: kuudra.io/v1alpha1
+kind: Component
+metadata:
+  namespace: hello-world-demo
+  name: source
+spec:
+  type: event-source
+  component: kuudra-official/hello-world
+  desiredState: running
+  options:
+    intervalMillis: 1000
+
