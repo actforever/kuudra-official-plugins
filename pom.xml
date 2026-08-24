@@ -16,7 +16,8 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kuudra.version>0.1.0-SNAPSHOT</kuudra.version>
+        <kuudra.version>v0.4.0-alpha-3</kuudra.version>
+        <junit.version>5.11.4</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -30,6 +31,11 @@
                 <groupId>io.github.actforever</groupId>
                 <artifactId>kuudra-plugin</artifactId>
                 <version>${kuudra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
