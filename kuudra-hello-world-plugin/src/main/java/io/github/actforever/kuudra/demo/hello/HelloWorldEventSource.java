@@ -18,6 +18,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource("hello-world")
+@io.github.actforever.kuudra.plugin.annotation.ComponentDoc(
+        purpose = "按配置周期产生最小 Hello World 事件。",
+        usageExample = "intervalMillis: 1000",
+        lifecyclePhases = {"initialize: 读取 intervalMillis", "start: 启动周期任务", "stop: 释放调度线程"},
+        emittedEvents = @io.github.actforever.kuudra.plugin.annotation.EventEmission(
+                stage = "每个调度周期", eventType = "hello-world.tick",
+                description = "产生 message=hello-world 的事件。",
+                dataExample = "{\"hello-world\":{\"message\":\"hello-world\"}}"))
 public final class HelloWorldEventSource implements EventSource, PluginComponentLifecycle {
     public static final String EVENT_TYPE = "hello-world.tick";
     public static final String DATA_NAMESPACE = "hello-world";

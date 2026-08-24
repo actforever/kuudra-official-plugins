@@ -1,0 +1,5 @@
+id = "logging"
+namespace = "kuudra-official"
+version = "0.1.0"
+entrypoint = "io.github.actforever.kuudra.demo.logging.LoggingPlugin"
+dependencies = []

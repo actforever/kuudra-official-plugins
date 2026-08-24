@@ -11,6 +11,7 @@
 
     <modules>
         <module>kuudra-hello-world-plugin</module>
+        <module>kuudra-logging-plugin</module>
     </modules>
 
     <properties>
