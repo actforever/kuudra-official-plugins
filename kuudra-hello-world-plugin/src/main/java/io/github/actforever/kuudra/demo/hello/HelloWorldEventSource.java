@@ -31,8 +31,7 @@ public final class HelloWorldEventSource implements EventSource, PluginComponent
 
     @Override
     public CompletionStage<Void> initialize(PluginComponentContext context) {
-        Object configured = context.configuration().get("intervalMillis");
-        if (configured != null) intervalMillis = number(configured);
+        intervalMillis = context.configuration("intervalMillis", Long.class, DEFAULT_INTERVAL_MILLIS);
         if (intervalMillis < 1) throw new KuudraException("intervalMillis must be positive");
         return CompletableFuture.completedFuture(null);
     }
@@ -67,11 +66,5 @@ public final class HelloWorldEventSource implements EventSource, PluginComponent
         if (current != null) current.shutdownNow();
         started.set(false);
         return CompletableFuture.completedFuture(null);
-    }
-
-    private static long number(Object value) {
-        if (value instanceof Number number) return number.longValue();
-        try { return Long.parseLong(value.toString()); }
-        catch (NumberFormatException error) { throw new KuudraException("intervalMillis must be an integer", error); }
     }
 }
