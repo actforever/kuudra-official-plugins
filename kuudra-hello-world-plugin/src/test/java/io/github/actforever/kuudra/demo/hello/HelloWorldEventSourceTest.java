@@ -27,8 +27,9 @@ class HelloWorldEventSourceTest {
             @Override public void register(String name, AutoCloseable resource) { }
             @Override public List<String> names() { return List.of(); }
         };
-        source.initialize(new PluginComponentContext("event-source/demo-plugins/hello-world",
-                new PluginContext("hello-world", home, resources, PluginRuntimeServices.unavailable()),
+        source.initialize(new PluginComponentContext("event-source/kuudra-official/hello-world",
+                new PluginContext("hello-world", "kuudra-official", home, resources,
+                        PluginRuntimeServices.unavailable(), (level, message, fields, error) -> { }),
                 Map.of("intervalMillis", 10)));
         LinkedBlockingQueue<KuudraEvent> events = new LinkedBlockingQueue<>();
         source.setEmitter(events::offer);
