@@ -3,8 +3,12 @@
 提供 `event-handler/kuudra-official/event-logger`，把收到的事件写入 Kuudra 内核日志。
 
 ```yaml
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata:
+  namespace: default
+  name: logger
 spec:
-  type: event-handler
   component: kuudra-official/event-logger
   options:
     level: INFO

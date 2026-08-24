@@ -7,12 +7,11 @@
 
 ```yaml
 apiVersion: kuudra.io/v1alpha1
-kind: Component
+kind: EventSource
 metadata:
   namespace: demo
   name: hello-world-source
 spec:
-  type: event-source
   component: kuudra-official/hello-world
   desiredState: running
   options:
