@@ -1,7 +1,7 @@
 package io.github.actforever.kuudra.demo.logging;
 
 import io.github.actforever.kuudra.api.action.ActionContext;
-import io.github.actforever.kuudra.api.context.CancellationToken;
+import io.github.actforever.kuudra.api.context.ExecutionDecision;
 import io.github.actforever.kuudra.api.event.EventData;
 import io.github.actforever.kuudra.api.event.EventEmitter;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
@@ -39,7 +39,7 @@ class LoggingEventHandlerTest {
                         PluginRuntimeServices.unavailable(), logger), Map.of())).toCompletableFuture().join();
         KuudraEvent event = KuudraEvent.of("hello", EventData.of("demo", Map.of("message", "hello-world")));
         ActionContext context = new ActionContext(UUID.randomUUID(), "flow", Map.of(), null,
-                () -> false, ignored -> true, Map.of(), Map.of("level", "WARN", "includeData", true));
+                () -> ExecutionDecision.CONTINUE, ignored -> true, Map.of(), Map.of("level", "WARN", "includeData", true));
         handler.handle(event, context).toCompletableFuture().join();
 
         assertEquals(PluginLogLevel.WARN, level.get());
