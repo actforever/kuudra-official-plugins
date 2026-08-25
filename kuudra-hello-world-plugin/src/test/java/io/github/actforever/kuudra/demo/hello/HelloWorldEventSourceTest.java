@@ -1,6 +1,6 @@
 package io.github.actforever.kuudra.demo.hello;
 
-import io.github.actforever.kuudra.api.KuudraEvent;
+import io.github.actforever.kuudra.api.event.KuudraEvent;
 import io.github.actforever.kuudra.plugin.PluginComponentContext;
 import io.github.actforever.kuudra.plugin.PluginContext;
 import io.github.actforever.kuudra.plugin.PluginResourceRegistry;

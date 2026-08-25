@@ -1,9 +1,9 @@
 package io.github.actforever.kuudra.demo.hello;
 
-import io.github.actforever.kuudra.api.EventData;
-import io.github.actforever.kuudra.api.EventEmitter;
-import io.github.actforever.kuudra.api.EventSource;
-import io.github.actforever.kuudra.api.KuudraEvent;
+import io.github.actforever.kuudra.api.component.EventSource;
+import io.github.actforever.kuudra.api.event.EventData;
+import io.github.actforever.kuudra.api.event.EventEmitter;
+import io.github.actforever.kuudra.api.event.KuudraEvent;
 import io.github.actforever.kuudra.api.KuudraException;
 import io.github.actforever.kuudra.plugin.PluginComponentContext;
 import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
