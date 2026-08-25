@@ -1,0 +1,4 @@
+id = "default"
+namespace = "kuudra-official"
+version = "0.1.0"
+entrypoint = "io.github.actforever.kuudra.defaultplugin.DefaultPlugin"
