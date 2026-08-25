@@ -16,7 +16,6 @@ import java.util.concurrent.CompletionStage;
 @io.github.actforever.kuudra.plugin.annotation.EventHandler("event-logger")
 @io.github.actforever.kuudra.plugin.annotation.ComponentDoc(
         purpose = "将收到的 KuudraEvent 通过绑定插件身份的内核 Logger 输出。",
-        usageExample = "level: INFO\nmessage: 'received event'\nincludeData: true",
         lifecyclePhases = {"initialize: 获取插件 Logger", "handle: 按配置级别记录事件"},
         configuration = {
                 @io.github.actforever.kuudra.plugin.annotation.SpecProperty(

@@ -6,7 +6,7 @@ import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
 import java.util.Locale;
 import java.util.concurrent.*;
 @io.github.actforever.kuudra.plugin.annotation.EventHandler("system-control")
-@ComponentDoc(purpose="Converts a routed event into a kernel or current-session control request.", usageExample="action: PAUSE_KERNEL", lifecyclePhases={"initialize","handle","destroy"})
+@ComponentDoc(purpose="Converts a routed event into a kernel or current-session control request.", lifecyclePhases={"initialize","handle","destroy"})
 public final class SystemControlEventHandler implements io.github.actforever.kuudra.api.component.EventHandler, PluginComponentLifecycle {
     private PluginRuntimeServices runtime;
     @Override public CompletionStage<Void> initialize(PluginComponentContext context) { runtime=context.plugin().runtime(); return CompletableFuture.completedFuture(null); }

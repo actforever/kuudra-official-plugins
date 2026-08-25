@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @io.github.actforever.kuudra.plugin.annotation.EventSource("hello-world")
 @io.github.actforever.kuudra.plugin.annotation.ComponentDoc(
         purpose = "按配置周期产生最小 Hello World 事件。",
-        usageExample = "intervalMillis: 1000",
         lifecyclePhases = {"initialize: 读取 intervalMillis", "start: 启动周期任务", "stop: 释放调度线程"},
         configuration = @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
                 path = "intervalMillis", type = Long.class, defaultValue = "1000",

@@ -4,11 +4,11 @@
 
 ```text
 kuudra-official/hello-world
-  -> ingress/kuudra-official/default-ingress
+  -> ingress/kuudra-official/plain-ingress
   -> kuudra-official/event-logger
 ```
 
-EventSource 输出的是 RAW 域事件，而 EventHandler 运行在 SESSION 域，所以 Ingress 是必要边界。外置 `kuudra-default-plugin` 提供 `ingress/kuudra-official/default-ingress`；只有本示例声明 `kind: Ingress` 资源时才创建实例。它无条件准入 Event 并计算 `groupKey`；Session 创建、租约和串行调度由 Runtime 管理。
+EventSource 输出的是 RAW 域事件，而 EventHandler 运行在 SESSION 域，所以 Ingress 是必要边界。外置 `kuudra-default-plugin` 提供 `ingress/kuudra-official/plain-ingress`；只有本示例声明 `kind: Ingress` 资源时才创建实例。它无条件准入 Event 并计算 `groupKey`；Session 创建、租约和串行调度由 Runtime 管理。
 
 先构建插件，然后把三个 JAR 放入 `<home-directory>/plugins/`：
 

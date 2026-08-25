@@ -1,6 +1,6 @@
 {
   "plugin.activated": "Official default plugin activated",
-  "component.ingress.default-ingress": "Unconditionally admit an event into the session domain",
-  "component.egress.default": "Export an event back to the raw domain",
+  "component.ingress.plain-ingress": "Unconditionally admit an event into the session domain",
+  "component.egress.plain-egress": "Export an event back to the raw domain",
   "component.event-handler.system-control": "Apply a kernel or session control action"
 }
