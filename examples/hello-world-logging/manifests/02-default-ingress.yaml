@@ -4,7 +4,7 @@ metadata:
   namespace: hello-world-demo
   name: ingress
 spec:
-  component: kuudra-official/default
+  component: kuudra-official/default-ingress
   desiredState: active
   options:
     groupKey: "${event#hello-world.message}"

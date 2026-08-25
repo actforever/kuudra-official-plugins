@@ -4,7 +4,6 @@ metadata:
   namespace: hello-world-demo
   name: hello-to-log
 spec:
-  desiredState: active
   imports:
     source:
       kind: EventSource
