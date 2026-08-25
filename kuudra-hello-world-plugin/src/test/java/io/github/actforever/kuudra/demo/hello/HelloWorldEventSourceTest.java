@@ -22,6 +22,11 @@ class HelloWorldEventSourceTest {
 
     @Test
     void emitsConfiguredHelloWorldEvent() throws Exception {
+        var documentation = HelloWorldEventSource.class.getAnnotation(
+                io.github.actforever.kuudra.plugin.annotation.ComponentDoc.class);
+        assertNotNull(documentation);
+        assertEquals("intervalMillis", documentation.configuration()[0].path());
+        assertEquals("1000", documentation.configuration()[0].defaultValue());
         HelloWorldEventSource source = new HelloWorldEventSource();
         PluginResourceRegistry resources = new PluginResourceRegistry() {
             @Override public void register(String name, AutoCloseable resource) { }

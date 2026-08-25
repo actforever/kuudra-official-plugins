@@ -18,6 +18,10 @@ class LoggingEventHandlerTest {
 
     @Test
     void logsEventThroughIdentityBoundPluginLogger() {
+        var documentation = LoggingEventHandler.class.getAnnotation(
+                io.github.actforever.kuudra.plugin.annotation.ComponentDoc.class);
+        assertEquals(List.of("level", "message", "includeData"), java.util.Arrays.stream(documentation.configuration())
+                .map(io.github.actforever.kuudra.plugin.annotation.SpecProperty::path).toList());
         AtomicReference<PluginLogLevel> level = new AtomicReference<>();
         AtomicReference<Map<String, Object>> fields = new AtomicReference<>();
         PluginLogger logger = (current, message, values, error) -> { level.set(current); fields.set(values); };

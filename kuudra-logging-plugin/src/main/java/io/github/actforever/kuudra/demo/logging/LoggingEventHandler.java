@@ -17,7 +17,21 @@ import java.util.concurrent.CompletionStage;
 @io.github.actforever.kuudra.plugin.annotation.ComponentDoc(
         purpose = "将收到的 KuudraEvent 通过绑定插件身份的内核 Logger 输出。",
         usageExample = "level: INFO\nmessage: 'received event'\nincludeData: true",
-        lifecyclePhases = {"initialize: 获取插件 Logger", "handle: 按配置级别记录事件"})
+        lifecyclePhases = {"initialize: 获取插件 Logger", "handle: 按配置级别记录事件"},
+        configuration = {
+                @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
+                        path = "level", type = PluginLogLevel.class, defaultValue = "INFO",
+                        description = "插件日志级别。", examples = {"\"INFO\"", "\"DEBUG\""},
+                        allowedValues = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR"}),
+                @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
+                        path = "message", type = String.class,
+                        description = "日志正文；未配置时使用 received event <event-type>。",
+                        examples = {"\"received hello-world event\"", "\"event accepted\""}),
+                @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
+                        path = "includeData", type = Boolean.class, defaultValue = "true",
+                        description = "是否把完整 EventData 命名空间树附加到日志字段。",
+                        examples = {"true", "false"})
+        })
 public final class LoggingEventHandler implements EventHandler, PluginComponentLifecycle {
     private PluginLogger logger;
 

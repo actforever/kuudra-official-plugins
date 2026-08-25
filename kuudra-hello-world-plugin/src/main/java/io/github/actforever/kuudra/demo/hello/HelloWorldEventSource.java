@@ -22,6 +22,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
         purpose = "按配置周期产生最小 Hello World 事件。",
         usageExample = "intervalMillis: 1000",
         lifecyclePhases = {"initialize: 读取 intervalMillis", "start: 启动周期任务", "stop: 释放调度线程"},
+        configuration = @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
+                path = "intervalMillis", type = Long.class, defaultValue = "1000",
+                description = "相邻两次 hello-world 事件之间的固定延迟，单位毫秒，必须大于 0。",
+                examples = {"1000", "5000"}),
         emittedEvents = @io.github.actforever.kuudra.plugin.annotation.EventEmission(
                 stage = "每个调度周期", eventType = "hello-world.tick",
                 description = "产生 message=hello-world 的事件。",
