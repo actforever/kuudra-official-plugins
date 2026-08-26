@@ -5,7 +5,7 @@ metadata:
   name: logger
 spec:
   component: kuudra-official/event-logger
-  desiredState: active
+  desiredState: running
   options:
     level: INFO
     message: "received ${event#hello-world.message}"

@@ -10,6 +10,7 @@ metadata:
   name: logger
 spec:
   component: kuudra-official/event-logger
+  desiredState: running
   options:
     level: INFO
     message: "received event"
