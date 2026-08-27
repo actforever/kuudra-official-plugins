@@ -1,0 +1,8 @@
+apiVersion: kuudra.io/v1alpha1
+kind: EventSource
+metadata:
+  namespace: macro
+  name: keyboard
+spec:
+  component: actforever/jnativehook-keyboard
+  desiredState: running

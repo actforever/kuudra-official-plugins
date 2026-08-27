@@ -1,0 +1,14 @@
+apiVersion: kuudra.io/v1alpha1
+kind: Ingress
+metadata:
+  namespace: macro
+  name: input-ingress
+spec:
+  component: kuudra-official/plain-ingress
+  desiredState: active
+  options:
+    groupKey: "${event#user-interaction.key.code}"
+    policy: PARALLEL
+    groupScope: FLOW_BINDING
+    maxParallelSessions: 16
+    queueCapacity: 64
