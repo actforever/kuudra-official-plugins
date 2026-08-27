@@ -1,0 +1,5 @@
+{
+  "probe.started": "Session probe started",
+  "probe.cancelled": "Session probe cancelled",
+  "probe.completed": "Session probe completed"
+}

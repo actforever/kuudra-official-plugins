@@ -1,0 +1,5 @@
+id = "session-probe"
+namespace = "kuudra-official"
+# 点分隔数字版本，可选 -prerelease/+build 后缀；不允许前导 v。
+version = "0.1.0"
+entrypoint = "io.github.actforever.kuudra.probe.SessionProbePlugin"
