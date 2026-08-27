@@ -7,13 +7,19 @@ import io.github.actforever.kuudra.plugin.annotation.*;
 @ComponentDoc(purpose="Unconditionally admits every incoming Event into the session domain and selects its session group.",
         configuration={
                 @SpecProperty(path="groupKey", type=String.class, description="Session group key; defaults to the Event type.", examples={"\"keyboard\"", "\"device-1\""}),
-                @SpecProperty(path="policy", type=String.class, description="Session scheduling policy.", examples={"\"PARALLEL\"", "\"SERIAL\""}, allowedValues={"PARALLEL","SERIAL","IGNORE","CANCEL_AND_REPLACE_PENDING","CANCEL_AND_KEEP_PENDING","TOGGLE"}),
-                @SpecProperty(path="groupScope", type=String.class, description="Isolation scope of a session group.", examples={"\"FLOW_BINDING\""}, allowedValues={"FLOW_BINDING","INGRESS"}),
-                @SpecProperty(path="maxParallelSessions", type=Integer.class, description="Maximum concurrent sessions per group.", examples={"1","64"}),
-                @SpecProperty(path="queueCapacity", type=Integer.class, description="Maximum queued Events per group.", examples={"32","256"})
+                @SpecProperty(path="sessionLabels", type=java.util.Map.class, description="String labels used for automatic SessionCoordinationPolicy selection.", examples={"{\"role\":\"window\"}"})
         })
 public final class PlainIngress implements io.github.actforever.kuudra.api.component.Ingress {
     @Override public IngressDecision admit(KuudraEvent event, EventContext context) {
-        return IngressDecision.accept(context.configuration("groupKey", String.class, event.type()), event);
+        Object configured = context.configuration().get("sessionLabels");
+        java.util.Map<String, String> labels = configured == null ? java.util.Map.of() : labels(configured);
+        return IngressDecision.accept(context.configuration("groupKey", String.class, event.type()), event, java.util.Map.of(), labels);
+    }
+
+    private static java.util.Map<String, String> labels(Object value) {
+        if (!(value instanceof java.util.Map<?, ?> map)) throw new IllegalArgumentException("sessionLabels must be an object");
+        java.util.LinkedHashMap<String, String> result = new java.util.LinkedHashMap<>();
+        map.forEach((key, item) -> result.put(String.valueOf(key), String.valueOf(item)));
+        return java.util.Map.copyOf(result);
     }
 }

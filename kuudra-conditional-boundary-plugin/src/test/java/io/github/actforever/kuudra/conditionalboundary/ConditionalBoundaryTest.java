@@ -5,8 +5,6 @@ import io.github.actforever.kuudra.api.context.EventContext;
 import io.github.actforever.kuudra.api.context.ExecutionDecision;
 import io.github.actforever.kuudra.api.event.EventData;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.api.session.SessionMatchPolicy;
-import io.github.actforever.kuudra.api.session.SessionTerminationPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -30,15 +28,11 @@ class ConditionalBoundaryTest {
     }
 
     @Test
-    void ingressReturnsTypedDependencyRequirements() {
-        Map<String, Object> dependency = Map.of(
-                "selector", Map.of("flowId", "dev/window", "ingressComponentId", "ingress/dev/window",
-                        "groupKey", "main", "matchPolicy", "LATEST"),
-                "terminationPolicy", "CANCEL_BOTH");
-        IngressDecision.ConstrainedAccepted accepted = assertInstanceOf(IngressDecision.ConstrainedAccepted.class,
-                new ConditionalIngress().admit(event, context(Map.of("condition", true, "dependencies", List.of(dependency)))));
-        assertEquals(SessionMatchPolicy.LATEST, accepted.dependencies().get(0).selector().matchPolicy());
-        assertEquals(SessionTerminationPolicy.CANCEL_BOTH, accepted.dependencies().get(0).terminationPolicy());
+    void ingressReturnsSessionLabelsForPolicySelection() {
+        IngressDecision.Accepted accepted = assertInstanceOf(IngressDecision.Accepted.class,
+                new ConditionalIngress().admit(event, context(Map.of("condition", true,
+                        "sessionLabels", Map.of("role", "job", "device", "keyboard-1")))));
+        assertEquals(Map.of("role", "job", "device", "keyboard-1"), accepted.sessionLabels());
     }
 
     @Test
@@ -50,10 +44,10 @@ class ConditionalBoundaryTest {
     }
 
     @Test
-    void malformedDependenciesFailFast() {
+    void malformedSessionLabelsFailFast() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> new ConditionalIngress().admit(event, context(Map.of("condition", true, "dependencies", "wrong"))));
-        assertTrue(error.getMessage().contains("dependencies"));
+                () -> new ConditionalIngress().admit(event, context(Map.of("condition", true, "sessionLabels", "wrong"))));
+        assertTrue(error.getMessage().contains("sessionLabels"));
     }
 
     private EventContext context(Map<String, Object> options) {

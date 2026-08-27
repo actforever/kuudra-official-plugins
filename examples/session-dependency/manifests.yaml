@@ -12,7 +12,10 @@ metadata: {namespace: dependency-demo, name: window-entry}
 spec:
   component: kuudra-official/conditional-ingress
   desiredState: active
-  options: {condition: true, groupKey: window, policy: SERIAL}
+  options:
+    condition: true
+    groupKey: window
+    sessionLabels: {role: window}
 ---
 apiVersion: kuudra.io/v1alpha1
 kind: EventHandler
@@ -21,16 +24,6 @@ spec:
   component: kuudra-official/session-probe-handler
   desiredState: running
   options: {label: window, durationMillis: 3000}
----
-apiVersion: kuudra.io/v1alpha1
-kind: Flow
-metadata: {namespace: dependency-demo, name: window-flow}
-spec:
-  imports:
-    source: {kind: EventSource, name: window-source}
-    ingress: {kind: Ingress, name: window-entry}
-    handler: {kind: EventHandler, name: window-handler}
-  edges: [{from: source, to: ingress}, {from: ingress, to: handler}]
 ---
 apiVersion: kuudra.io/v1alpha1
 kind: EventSource
@@ -49,15 +42,7 @@ spec:
   options:
     condition: true
     groupKey: jobs
-    policy: SERIAL
-    queueCapacity: 2
-    dependencies:
-      - selector:
-          flowId: dependency-demo/window-flow
-          ingressComponentId: ingress/dependency-demo/window-entry
-          groupKey: window
-          matchPolicy: UNIQUE
-        terminationPolicy: CANCEL_DEPENDENT
+    sessionLabels: {role: job}
 ---
 apiVersion: kuudra.io/v1alpha1
 kind: EventHandler
@@ -68,11 +53,45 @@ spec:
   options: {label: job, durationMillis: 10000}
 ---
 apiVersion: kuudra.io/v1alpha1
+kind: SessionCoordinationPolicy
+metadata: {namespace: dependency-demo, name: window-parallel}
+spec:
+  selector:
+    matchLabels: {role: window}
+  scheduling:
+    policy: PARALLEL
+    maxParallelSessions: 1
+    queueCapacity: 0
+---
+apiVersion: kuudra.io/v1alpha1
+kind: SessionCoordinationPolicy
+metadata: {namespace: dependency-demo, name: jobs-in-window}
+spec:
+  selector:
+    matchLabels: {role: job}
+  scheduling:
+    policy: SERIAL
+    maxParallelSessions: 1
+    queueCapacity: 2
+  dependencies:
+    - requiredSessionSelector:
+        matchLabels: {role: window}
+        matchPolicy: UNIQUE
+      terminationPropagation: CANCEL_DEPENDENT
+---
+apiVersion: kuudra.io/v1alpha1
 kind: Flow
-metadata: {namespace: dependency-demo, name: job-flow}
+metadata: {namespace: dependency-demo, name: dependency-flow}
 spec:
   imports:
-    source: {kind: EventSource, name: job-source}
-    ingress: {kind: Ingress, name: job-entry}
-    handler: {kind: EventHandler, name: job-handler}
-  edges: [{from: source, to: ingress}, {from: ingress, to: handler}]
+    window-source: {kind: EventSource, name: window-source}
+    window-entry: {kind: Ingress, name: window-entry}
+    window-handler: {kind: EventHandler, name: window-handler}
+    job-source: {kind: EventSource, name: job-source}
+    job-entry: {kind: Ingress, name: job-entry}
+    job-handler: {kind: EventHandler, name: job-handler}
+  edges:
+    - {from: window-source, to: window-entry}
+    - {from: window-entry, to: window-handler}
+    - {from: job-source, to: job-entry}
+    - {from: job-entry, to: job-handler}

@@ -2,7 +2,7 @@
 
 `kuudra-official/conditional-boundary` provides explicit conditional domain boundaries:
 
-- `ingress/kuudra-official/conditional-ingress` admits RAW Events only when its condition matches. It can also declare active Session dependencies.
+- `ingress/kuudra-official/conditional-ingress` admits RAW Events only when its condition matches, then assigns a group key and Session labels.
 - `egress/kuudra-official/conditional-egress` exports SESSION Events only when its condition matches.
 
 Runtime resolves placeholders before invocation. Conditional Ingress can read Event, Flow, and Global scopes; Conditional Egress can additionally read Session scope.
@@ -21,17 +21,11 @@ spec:
     operator: EQUALS
     value: true
     groupKey: "${event#kuudra-official.device-id}"
-    policy: SERIAL
-    dependencies:
-      - selector:
-          flowId: dev/window-flow
-          ingressComponentId: ingress/dev/window-entry
-          groupKey: "${event#kuudra-official.window-id}"
-          matchPolicy: UNIQUE
-        terminationPolicy: CANCEL_DEPENDENT
+    sessionLabels:
+      role: job
 ```
 
-The scheduling policy controls competing Events in this Ingress group. Dependencies are resolved only when an admission actually starts, after SERIAL queues or replacement policies have run. A missing or ambiguous dependency rejects Session dispatch.
+Ingress does not reference or parse scheduling/dependency configuration. Runtime automatically selects at most one same-namespace `SessionCoordinationPolicy` from the produced labels, and dependency matching is restricted to the current Flow.
 
 ```yaml
 apiVersion: kuudra.io/v1alpha1
