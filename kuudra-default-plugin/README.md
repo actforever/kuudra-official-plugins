@@ -1,16 +1,21 @@
 # Kuudra Default Plugin
 
-Kuudra 官方基础组件插件，身份为 `kuudra-official/default`。构建后的 JAR 应部署到 `<home-directory>/plugins`。
+`kuudra-official/default` supplies reusable boundary and event-processing components for Kuudra v0.4.0.
 
-组件：
+| Reference | Domain | Purpose |
+| --- | --- | --- |
+| `ingress/kuudra-official/plain-ingress` | RAW → SESSION | Admit every event and select its session group |
+| `egress/kuudra-official/plain-egress` | SESSION → RAW | Remove session execution state |
+| `event-adapter/kuudra-official/event-mapper` | RAW or SESSION | Retype an event and project namespaced data |
+| `event-adapter/kuudra-official/event-filter` | RAW or SESSION | Apply declarative ALL/ANY filtering rules |
+| `event-interpreter/kuudra-official/sequential-event` | RAW | Recognize an ordered event sequence in a time window |
+| `event-interpreter/kuudra-official/any-order-event` | RAW | Recognize required events in any order in a time window |
+| `event-handler/kuudra-official/system-control` | SESSION | Route events to kernel/session control requests |
 
-- `ingress/kuudra-official/plain-ingress`：无条件放行任意 Event，并根据配置计算会话组。
-- `egress/kuudra-official/plain-egress`：将 Session Event 导出回 RAW 域。
-- `event-handler/kuudra-official/system-control`：提交内核或 Session 控制请求。
+The mapper covers the historical Union trigger: set `outputType` and/or `data` to map a lower-level event to an upper-level event. Mapper values support Kuudra placeholders because Runtime resolves component options before invocation.
 
-Flow 不是插件组件，而是内核拥有的声明式路由资源。插件提供可被 Flow 导入的节点实现，App 负责解析和校验 `imports/edges`，Runtime 负责把它编译成调度图。
+Interpreter selectors are objects whose keys are either `type` or namespaced data paths such as `keyboard.key.code`. A requirement contains a selector and a positive `count`. `forbidden` selectors reset current progress. The timeout starts at the first relevant event; unrelated events do not reset progress. Successful output uses the configured `outputType` and places `interpreter`, `matchCount`, and optionally `matchedEvents` under the `kuudra-official` data namespace.
 
-```powershell
-mvn -pl kuudra-api,kuudra-plugin -am install -DskipTests
-mvn package
-```
+Filter operators are `EXISTS`, `NOT_EXISTS`, `EQUALS`, `NOT_EQUALS`, `IN`, `NOT_IN`, numeric/string comparison operators, `CONTAINS`, `STARTS_WITH`, `ENDS_WITH`, and `MATCHES_REGEX`.
+
+See [`examples/advanced-event-pipeline.yaml`](examples/advanced-event-pipeline.yaml) for a complete multi-document resource manifest.

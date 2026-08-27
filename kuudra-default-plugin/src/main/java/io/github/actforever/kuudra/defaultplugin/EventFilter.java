@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 @ComponentDoc(purpose="Passes only Events matching declarative rules.", configuration={
         @SpecProperty(path="mode", type=String.class, description="Rule aggregation mode.", defaultValue="ALL", allowedValues={"ALL","ANY"}, examples={"\"ALL\""}),
         @SpecProperty(path="negate", type=Boolean.class, description="Negates the aggregated result.", defaultValue="false", examples={"false"}),
-        @SpecProperty(path="rules[]", type=Map.class, required=true, description="Rules with path, operator and optional value.", examples={"[{path: type, operator: EQUALS, value: demo.normalized}]"})
+        @SpecProperty(path="rules[]", type=Map.class, required=true, description="Rules with path, operator and optional value.", examples={"{\"path\":\"type\",\"operator\":\"EQUALS\",\"value\":\"demo.normalized\"}"})
 })
 public final class EventFilter implements io.github.actforever.kuudra.api.component.EventAdapter {
     @Override public List<KuudraEvent> adapt(KuudraEvent event, EventContext context) {

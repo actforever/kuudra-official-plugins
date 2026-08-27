@@ -13,7 +13,7 @@ import java.util.Map;
 @ComponentDoc(purpose = "Retypes an Event and projects configured values into namespaced Event data.", configuration = {
         @SpecProperty(path="outputType", type=String.class, description="Optional output Event type.", examples={"\"demo.normalized\""}),
         @SpecProperty(path="preserveData", type=Boolean.class, description="Whether existing Event data is retained.", defaultValue="true", examples={"true"}),
-        @SpecProperty(path="data", type=Map.class, description="Namespace/field/value tree. Values may contain placeholders.", examples={"{normalized: {message: '${event#source.message}'}}"})
+        @SpecProperty(path="data", type=Map.class, description="Namespace/field/value tree. Values may contain placeholders.", examples={"{\"normalized\":{\"message\":\"${event#source.message}\"}}"})
 })
 public final class EventMapper implements io.github.actforever.kuudra.api.component.EventAdapter {
     @Override public List<KuudraEvent> adapt(KuudraEvent event, EventContext context) {

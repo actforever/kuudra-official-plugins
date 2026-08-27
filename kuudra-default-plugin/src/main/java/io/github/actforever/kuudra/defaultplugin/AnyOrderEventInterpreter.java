@@ -11,8 +11,8 @@ import java.util.List;
 @ComponentDoc(purpose="Recognizes required Events in any order inside a bounded time window.", configuration={
         @SpecProperty(path="outputType", type=String.class, required=true, description="Type emitted after a complete match.", examples={"\"gesture.chord\""}),
         @SpecProperty(path="timeoutMs", type=Long.class, description="Window timeout in milliseconds.", defaultValue="3000", examples={"1000"}),
-        @SpecProperty(path="requirements[]", type=java.util.Map.class, required=true, description="Selector/count requirements.", examples={"[{selector: {type: key.a}, count: 1}, {selector: {type: key.b}, count: 1}]"}),
-        @SpecProperty(path="forbidden[]", type=java.util.Map.class, description="Selectors that reset progress.", examples={"[{type: key.escape}]"}),
+        @SpecProperty(path="requirements[]", type=java.util.Map.class, required=true, description="Selector/count requirements.", examples={"{\"selector\":{\"type\":\"key.a\"},\"count\":1}", "{\"selector\":{\"type\":\"key.b\"},\"count\":1}"}),
+        @SpecProperty(path="forbidden[]", type=java.util.Map.class, description="Selectors that reset progress.", examples={"{\"type\":\"key.escape\"}"}),
         @SpecProperty(path="includeMatchedEvents", type=Boolean.class, defaultValue="true", description="Includes immutable matched Event snapshots.", examples={"true"})
 })
 public final class AnyOrderEventInterpreter extends AbstractWindowInterpreter {

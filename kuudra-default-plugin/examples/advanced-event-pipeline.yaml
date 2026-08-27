@@ -1,0 +1,121 @@
+apiVersion: kuudra.io/v1alpha1
+kind: EventSource
+metadata:
+  namespace: demo
+  name: source
+spec:
+  component: kuudra-official/hello-world
+  desiredState: running
+  options:
+    intervalMillis: 500
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventAdapter
+metadata:
+  namespace: demo
+  name: normalize
+spec:
+  component: kuudra-official/event-mapper
+  desiredState: active
+  domain: RAW
+  options:
+    outputType: demo.normalized
+    preserveData: true
+    data:
+      normalized:
+        message: "${event#hello-world.message}"
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventAdapter
+metadata:
+  namespace: demo
+  name: hello-only
+spec:
+  component: kuudra-official/event-filter
+  desiredState: active
+  domain: RAW
+  options:
+    mode: ALL
+    rules:
+      - path: type
+        operator: EQUALS
+        value: demo.normalized
+      - path: normalized.message
+        operator: EQUALS
+        value: hello-world
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventInterpreter
+metadata:
+  namespace: demo
+  name: double-hello
+spec:
+  component: kuudra-official/sequential-event
+  desiredState: running
+  options:
+    outputType: demo.double-hello
+    timeoutMs: 3000
+    requirements:
+      - selector: {type: demo.normalized}
+        count: 2
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventInterpreter
+metadata:
+  namespace: demo
+  name: triple-hello
+spec:
+  component: kuudra-official/any-order-event
+  desiredState: running
+  options:
+    outputType: demo.triple-hello
+    timeoutMs: 4000
+    requirements:
+      - selector: {type: demo.normalized}
+        count: 3
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Ingress
+metadata:
+  namespace: demo
+  name: ingress
+spec:
+  component: kuudra-official/plain-ingress
+  desiredState: active
+  options:
+    policy: SERIAL
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata:
+  namespace: demo
+  name: logger
+spec:
+  component: kuudra-official/event-logger
+  desiredState: running
+  options:
+    level: INFO
+    message: "Matched ${event#kuudra-official.interpreter}: ${event#kuudra-official.matchCount} events"
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Flow
+metadata:
+  namespace: demo
+  name: advanced-event-pipeline
+spec:
+  imports:
+    source: {kind: EventSource, name: source}
+    mapper: {kind: EventAdapter, name: normalize}
+    filter: {kind: EventAdapter, name: hello-only}
+    sequential: {kind: EventInterpreter, name: double-hello}
+    anyOrder: {kind: EventInterpreter, name: triple-hello}
+    ingress: {kind: Ingress, name: ingress}
+    logger: {kind: EventHandler, name: logger}
+  edges:
+    - {from: source, to: mapper}
+    - {from: mapper, to: filter}
+    - {from: filter, to: sequential}
+    - {from: filter, to: anyOrder}
+    - {from: sequential, to: ingress}
+    - {from: anyOrder, to: ingress}
+    - {from: ingress, to: logger}
