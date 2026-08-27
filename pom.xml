@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>kuudra-user-interaction-spec-plugin</module>
         <module>kuudra-hello-world-plugin</module>
         <module>kuudra-logging-plugin</module>
         <module>kuudra-default-plugin</module>
@@ -35,6 +36,11 @@
                 <groupId>io.github.actforever</groupId>
                 <artifactId>kuudra-plugin</artifactId>
                 <version>${kuudra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.actforever</groupId>
+                <artifactId>kuudra-user-interaction-spec-plugin</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
