@@ -17,7 +17,6 @@ metadata:
 spec:
   component: kuudra-official/event-mapper
   desiredState: active
-  domain: RAW
   options:
     outputType: demo.normalized
     preserveData: true
@@ -33,7 +32,6 @@ metadata:
 spec:
   component: kuudra-official/event-filter
   desiredState: active
-  domain: RAW
   options:
     mode: ALL
     rules:
