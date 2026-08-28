@@ -1,5 +1,7 @@
 # Kuudra Plugins
 
+> Windows 原生能力：`kuudra-windows-native-host-plugin`（`actforever/windows-native-host`）管理受控 C# sidecar、UAC 与 Named Pipe；`kuudra-process-control-plugin`（`actforever/process-control`）提供限时进程暂停/恢复 EventHandler。安全验证见 [`examples/process-control-safe`](examples/process-control-safe/README.md)。父插件本身没有 Component，只有实际声明并选择特权资源时才弹 UAC。
+
 本仓库存放 Kuudra 的可部署插件、共享业务规约和端到端配置示例。它与 Kuudra 内核仓库分离：内核只提供插件、事件流、会话和调谐基础设施，不会隐式注册这里的任何组件。
 
 ## 版本与运行环境
