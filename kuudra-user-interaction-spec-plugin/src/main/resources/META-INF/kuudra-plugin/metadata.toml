@@ -1,4 +1,4 @@
 id = "user-interaction-spec"
 namespace = "actforever"
-version = "0.1.0"
+version = "0.1.1"
 entrypoint = "io.github.actforever.kuudra.interaction.UserInteractionSpecPlugin"

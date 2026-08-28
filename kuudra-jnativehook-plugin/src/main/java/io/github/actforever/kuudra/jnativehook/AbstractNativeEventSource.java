@@ -8,6 +8,9 @@ import io.github.actforever.kuudra.api.lifecycle.PausableLifecycle;
 import io.github.actforever.kuudra.plugin.PluginComponentContext;
 import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
 import io.github.actforever.kuudra.plugin.PluginLogger;
+import io.github.actforever.kuudra.interaction.InjectedInteractionRegistry;
+import io.github.actforever.kuudra.interaction.InteractionEvents;
+import io.github.actforever.kuudra.interaction.InteractionSignature;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -20,12 +23,16 @@ abstract class AbstractNativeEventSource implements EventSource, PausableLifecyc
     private volatile PluginLogger logger;
     private boolean started;
     private boolean attached;
+    private SyntheticEventPolicy syntheticEventPolicy = SyntheticEventPolicy.DROP;
 
     AbstractNativeEventSource() { this(SharedNativeHookController.INSTANCE); }
     AbstractNativeEventSource(NativeHookController hookController) { this.hookController = Objects.requireNonNull(hookController); }
 
     @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
         logger = context.logger();
+        String policy = context.configuration("syntheticEventPolicy", String.class, SyntheticEventPolicy.DROP.name());
+        try { syntheticEventPolicy = SyntheticEventPolicy.valueOf(policy.toUpperCase(java.util.Locale.ROOT)); }
+        catch (IllegalArgumentException error) { return CompletableFuture.failedFuture(new KuudraException("Unsupported syntheticEventPolicy: " + policy, error)); }
         return CompletableFuture.completedFuture(null);
     }
 
@@ -93,9 +100,13 @@ abstract class AbstractNativeEventSource implements EventSource, PausableLifecyc
         }
     }
 
-    protected final void emitSafely(KuudraEvent event) {
+    protected final void emitSafely(KuudraEvent event, InteractionSignature signature) {
         if (!isEmitting()) return;
-        try { emitter.emit(event); }
+        boolean synthetic = InjectedInteractionRegistry.global().consume(signature);
+        if (synthetic && syntheticEventPolicy == SyntheticEventPolicy.DROP) return;
+        KuudraEvent output = event.withData(event.data().with(InteractionEvents.DATA_NAMESPACE,
+                InteractionEvents.SYNTHETIC, synthetic));
+        try { emitter.emit(output); }
         catch (RuntimeException error) {
             PluginLogger current = logger;
             if (current != null) current.error("jnativehook.event.emit.failed", error);

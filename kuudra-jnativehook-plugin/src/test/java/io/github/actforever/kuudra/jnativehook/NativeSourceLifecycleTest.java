@@ -3,6 +3,9 @@ package io.github.actforever.kuudra.jnativehook;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
+import io.github.actforever.kuudra.api.event.KuudraEvent;
+import io.github.actforever.kuudra.interaction.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,6 +29,26 @@ class NativeSourceLifecycleTest {
         assertEquals(2, source.detached.get());
     }
 
+    @Test void dropsMatchingInjectedInteractionAndMarksPhysicalInput() {
+        FakeSource source = new FakeSource(new FakeController());
+        AtomicInteger emitted = new AtomicInteger();
+        source.setEmitter(event -> {
+            assertEquals(false, event.data().require(InteractionEvents.DATA_NAMESPACE, InteractionEvents.SYNTHETIC));
+            emitted.incrementAndGet(); return true;
+        });
+        source.start().toCompletableFuture().join();
+        KeySpec key = new KeySpec(KeyCode.F24, KeyLocation.STANDARD);
+        InteractionSignature signature = new InteractionSignature(InteractionEvents.KEY_PRESSED, key);
+        try (InjectedInteractionRegistry.Ticket ticket = InjectedInteractionRegistry.global().expect(signature, Duration.ofSeconds(1))) {
+            ticket.commit();
+        }
+        source.publish(signature);
+        assertEquals(0, emitted.get());
+        source.publish(signature);
+        assertEquals(1, emitted.get());
+        source.stop().toCompletableFuture().join();
+    }
+
     private static final class FakeController implements NativeHookController {
         private final AtomicInteger acquired = new AtomicInteger();
         private final AtomicInteger released = new AtomicInteger();
@@ -40,5 +63,8 @@ class NativeSourceLifecycleTest {
         @Override protected String componentName() { return "fake"; }
         @Override protected void attachListener() { attached.incrementAndGet(); }
         @Override protected void detachListener() { detached.incrementAndGet(); }
+        private void publish(InteractionSignature signature) {
+            emitSafely(KuudraEvent.of(signature.eventType(), java.util.Map.of()), signature);
+        }
     }
 }

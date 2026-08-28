@@ -25,7 +25,9 @@ import java.util.concurrent.*;
                         description = "COALESCE emits the leading and latest positions, THROTTLE emits only the leading position, and UNLIMITED emits every native event.",
                         examples = {"\"COALESCE\"", "\"UNLIMITED\""}),
                 @SpecProperty(path = "output.intervalMillis", type = Long.class, defaultValue = "16",
-                        description = "Sampling interval for COALESCE and THROTTLE; ignored by UNLIMITED.", examples = {"8", "16", "33"})
+                        description = "Sampling interval for COALESCE and THROTTLE; ignored by UNLIMITED.", examples = {"8", "16", "33"}),
+                @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+                        allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true.")
         },
         emittedEvents = {
                 @EventEmission(stage = "native mouse moved", eventType = InteractionEvents.MOUSE_MOVED,
@@ -121,11 +123,13 @@ public final class MouseMotionEventSource extends AbstractNativeEventSource impl
 
     private void emit(NativeMouseEvent event, InteractionPhase phase) {
         String type = phase == InteractionPhase.DRAGGED ? InteractionEvents.MOUSE_DRAGGED : InteractionEvents.MOUSE_MOVED;
+        ScreenPosition position = NativeEventMapper.position(event);
         emitSafely(NativeKuudraEvents.event(type, Map.of(
-                        InteractionEvents.POSITION, NativeEventMapper.position(event),
+                        InteractionEvents.POSITION, position,
                         InteractionEvents.PHASE, phase,
                         InteractionEvents.MODIFIERS, NativeEventMapper.modifiers(event.getModifiers())), event,
-                Map.of("x", event.getX(), "y", event.getY(), "button", event.getButton())));
+                Map.of("x", event.getX(), "y", event.getY(), "button", event.getButton())),
+                new InteractionSignature(type, position));
     }
 
     @Override protected void onPaused() { resetWindow(); }

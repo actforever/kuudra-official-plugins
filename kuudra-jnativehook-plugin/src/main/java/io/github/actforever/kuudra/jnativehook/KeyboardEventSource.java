@@ -7,6 +7,7 @@ import io.github.actforever.kuudra.interaction.*;
 import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
 import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
@@ -16,6 +17,8 @@ import java.util.Map;
         lifecyclePhases = {"start: acquire the shared native hook and attach the keyboard listener",
                 "pause: detach the listener while preserving the native hook lease",
                 "resume: reattach the listener", "stop: detach and release the native hook lease"},
+        configuration = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+                allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true."),
         emittedEvents = {
                 @EventEmission(stage = "native key pressed", eventType = InteractionEvents.KEY_PRESSED,
                         description = "Emits key, phase and modifier data.",
@@ -29,12 +32,14 @@ public final class KeyboardEventSource extends AbstractNativeEventSource impleme
     @Override public void nativeKeyReleased(NativeKeyEvent event) { emit(event, InteractionPhase.RELEASED, InteractionEvents.KEY_RELEASED); }
 
     private void emit(NativeKeyEvent event, InteractionPhase phase, String type) {
+        KeySpec key = NativeEventMapper.key(event);
         emitSafely(NativeKuudraEvents.event(type, Map.of(
-                        InteractionEvents.KEY, NativeEventMapper.key(event),
+                        InteractionEvents.KEY, key,
                         InteractionEvents.PHASE, phase,
                         InteractionEvents.MODIFIERS, NativeEventMapper.modifiers(event.getModifiers())), event,
                 Map.of("keyCode", event.getKeyCode(), "rawCode", event.getRawCode(),
-                        "keyLocation", event.getKeyLocation(), "keyText", NativeKeyEvent.getKeyText(event.getKeyCode()))));
+                        "keyLocation", event.getKeyLocation(), "keyText", NativeKeyEvent.getKeyText(event.getKeyCode()))),
+                new InteractionSignature(type, key));
     }
 
     @Override protected String componentName() { return "jnativehook-keyboard"; }

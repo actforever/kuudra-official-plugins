@@ -10,6 +10,7 @@ public final class InteractionEvents {
     public static final String POSITION = "position";
     public static final String PHASE = "phase";
     public static final String MODIFIERS = "modifiers";
+    public static final String SYNTHETIC = "synthetic";
 
     public static final String KEY_PRESSED = "user-interaction.keyboard.pressed";
     public static final String KEY_RELEASED = "user-interaction.keyboard.released";

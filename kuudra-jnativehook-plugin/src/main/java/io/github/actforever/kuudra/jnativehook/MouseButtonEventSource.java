@@ -7,6 +7,7 @@ import io.github.actforever.kuudra.interaction.*;
 import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
 import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
@@ -14,6 +15,8 @@ import java.util.Map;
         instancePolicy = @InstancePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-button", threadSafe = true))
 @ComponentDoc(purpose = "Captures global mouse-button press and release events without synthesizing click gestures.",
         lifecyclePhases = {"start: attach mouse-button listener", "pause: detach listener", "resume: reattach listener", "stop: release listener and native hook lease"},
+        configuration = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+                allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true."),
         emittedEvents = {
                 @EventEmission(stage = "native mouse pressed", eventType = InteractionEvents.MOUSE_BUTTON_PRESSED,
                         dataExample = "{\"user-interaction\":{\"button\":{\"button\":\"BUTTON_1\"},\"position\":{\"x\":10,\"y\":20,\"coordinateSpace\":\"SCREEN\"},\"phase\":\"PRESSED\"}}"),
@@ -25,12 +28,14 @@ public final class MouseButtonEventSource extends AbstractNativeEventSource impl
     @Override public void nativeMouseReleased(NativeMouseEvent event) { emit(event, InteractionPhase.RELEASED, InteractionEvents.MOUSE_BUTTON_RELEASED); }
 
     private void emit(NativeMouseEvent event, InteractionPhase phase, String type) {
+        MouseButtonSpec button = NativeEventMapper.button(event);
         emitSafely(NativeKuudraEvents.event(type, Map.of(
-                        InteractionEvents.BUTTON, NativeEventMapper.button(event),
+                        InteractionEvents.BUTTON, button,
                         InteractionEvents.POSITION, NativeEventMapper.position(event),
                         InteractionEvents.PHASE, phase,
                         InteractionEvents.MODIFIERS, NativeEventMapper.modifiers(event.getModifiers())), event,
-                Map.of("button", event.getButton(), "clickCount", event.getClickCount(), "x", event.getX(), "y", event.getY())));
+                Map.of("button", event.getButton(), "clickCount", event.getClickCount(), "x", event.getX(), "y", event.getY())),
+                new InteractionSignature(type, button));
     }
 
     @Override protected String componentName() { return "jnativehook-mouse-button"; }
