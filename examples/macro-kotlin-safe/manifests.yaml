@@ -1,0 +1,74 @@
+apiVersion: kuudra.io/v1alpha1
+kind: EventSource
+metadata:
+  namespace: macro-kotlin-demo
+  name: trigger
+spec:
+  component: kuudra-official/hello-world
+  desiredState: running
+  options:
+    intervalMillis: 500
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Ingress
+metadata:
+  namespace: macro-kotlin-demo
+  name: ingress
+spec:
+  component: kuudra-official/plain-ingress
+  desiredState: active
+  options:
+    groupKey: "${event#hello-world.message}"
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata:
+  namespace: macro-kotlin-demo
+  name: robot
+spec:
+  component: actforever/awt-robot
+  desiredState: running
+  options:
+    script: macros/safe-emit.kt
+    maxTotalSteps: 100
+    syntheticMarkerLifetimeMillis: 500
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata:
+  namespace: macro-kotlin-demo
+  name: logger
+spec:
+  component: kuudra-official/event-logger
+  desiredState: running
+  options:
+    level: INFO
+    message: "Kotlin macro emitted ${event#macro.result}"
+    includeData: true
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Flow
+metadata:
+  namespace: macro-kotlin-demo
+  name: safe-kotlin-macro
+spec:
+  imports:
+    source:
+      kind: EventSource
+      name: trigger
+    ingress:
+      kind: Ingress
+      name: ingress
+    robot:
+      kind: EventHandler
+      name: robot
+    logger:
+      kind: EventHandler
+      name: logger
+  edges:
+    - from: source
+      to: ingress
+    - from: ingress
+      to: robot
+    - from: robot
+      to: logger
