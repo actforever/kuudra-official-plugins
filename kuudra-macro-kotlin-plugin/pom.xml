@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent><groupId>io.github.actforever</groupId><artifactId>kuudra-official-plugins</artifactId><version>0.1.0-SNAPSHOT</version><relativePath>../pom.xml</relativePath></parent>
+    <artifactId>kuudra-macro-kotlin-plugin</artifactId>
+    <dependencies>
+        <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-api</artifactId><scope>provided</scope></dependency>
+        <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-plugin</artifactId><scope>provided</scope></dependency>
+        <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-macro-spec-plugin</artifactId></dependency>
+        <dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-scripting-jvm-host</artifactId><version>${kotlin.version}</version></dependency>
+        <dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-scripting-common</artifactId><version>${kotlin.version}</version></dependency>
+        <dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-scripting-jvm</artifactId><version>${kotlin.version}</version></dependency>
+        <dependency><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-stdlib</artifactId><version>${kotlin.version}</version></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+    </dependencies>
+    <build><plugins>
+        <plugin><groupId>org.jetbrains.kotlin</groupId><artifactId>kotlin-maven-plugin</artifactId><version>${kotlin.version}</version><executions><execution><id>compile</id><phase>compile</phase><goals><goal>compile</goal></goals><configuration><sourceDirs><sourceDir>${project.basedir}/src/main/kotlin</sourceDir></sourceDirs></configuration></execution><execution><id>test-compile</id><phase>test-compile</phase><goals><goal>test-compile</goal></goals><configuration><sourceDirs><sourceDir>${project.basedir}/src/test/kotlin</sourceDir></sourceDirs></configuration></execution></executions><configuration><jvmTarget>17</jvmTarget></configuration></plugin>
+        <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.6.0</version><executions><execution><phase>package</phase><goals><goal>shade</goal></goals><configuration><artifactSet><excludes><exclude>io.github.actforever:kuudra-api</exclude><exclude>io.github.actforever:kuudra-plugin</exclude><exclude>io.github.actforever:kuudra-macro-spec-plugin</exclude><exclude>io.github.actforever:kuudra-user-interaction-spec-plugin</exclude></excludes></artifactSet><createDependencyReducedPom>false</createDependencyReducedPom></configuration></execution></executions></plugin>
+    </plugins></build>
+    <properties><kotlin.compiler.daemon>false</kotlin.compiler.daemon><kotlin.compiler.execution.strategy>in-process</kotlin.compiler.execution.strategy></properties>
+</project>

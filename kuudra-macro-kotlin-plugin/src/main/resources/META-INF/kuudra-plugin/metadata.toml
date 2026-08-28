@@ -1,0 +1,10 @@
+id = "macro-kotlin"
+namespace = "actforever"
+version = "0.1.0"
+entrypoint = "io.github.actforever.kuudra.macrokotlin.KotlinMacroPlugin"
+
+[[dependencies]]
+namespace = "actforever"
+pluginId = "macro-spec"
+mandatory = true
+versionRange = "[0.1.0,0.2.0)"
