@@ -2,6 +2,12 @@
 
 `actforever/awt-robot` provides `event-handler/actforever/awt-robot`, a serialized physical-input macro executor based on `java.awt.Robot`. It depends on `actforever/user-interaction-spec` and `actforever/macro-spec`, and accepts the same `KeySpec`, `MouseButtonSpec`, `ScreenPosition`, and `MouseWheelSpec` values emitted by capture plugins.
 
+## Current architecture boundary
+
+The public contracts are decoupled: key/mouse values belong to `user-interaction-spec`, macro representation and frontend SPI belong to `macro-spec`, and Kotlin authoring belongs to `macro-kotlin`. This plugin owns the AWT mapping, shared physical device, held-input cleanup and serialized execution queue.
+
+At present it also owns `MacroProgram`, the generic IR traversal/control-flow executor. It is therefore an AWT-backed executor rather than a pure Driver plugin. A future executor module can move that interpreter above a small public driver interface, allowing AWT Robot and other simulation drivers to share identical execution logic without changing macro files.
+
 ## Component options
 
 ```yaml
@@ -17,6 +23,86 @@ spec:
           code: F24
           location: STANDARD
         holdMillis: 50
+```
+
+## Minimal Flow
+
+The Handler needs a SESSION-domain Event, so a source must pass through an Ingress first. With the HelloWorld, default and logging plugins deployed, this safe example only emits a result Event and is suitable for an automated logic check:
+
+The same runnable manifest is stored under `examples/macro-yaml-safe`.
+
+```yaml
+apiVersion: kuudra.io/v1alpha1
+kind: EventSource
+metadata: {namespace: macro-demo, name: trigger}
+spec:
+  component: kuudra-official/hello-world/hello-world
+  desiredState: running
+  options: {intervalMillis: 1000}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Ingress
+metadata: {namespace: macro-demo, name: ingress}
+spec:
+  component: kuudra-official/default/plain-ingress
+  desiredState: active
+  options: {groupKey: "${event#hello-world.message}"}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata: {namespace: macro-demo, name: robot}
+spec:
+  component: actforever/awt-robot/awt-robot
+  desiredState: running
+  options:
+    maxTotalSteps: 100
+    steps:
+      - action: if
+        condition: {ref: event#hello-world.message, operator: EQUALS, value: hello-world}
+        then:
+          - action: emit
+            eventType: macro.completed
+            data: {macro: {result: yaml-executed}}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata: {namespace: macro-demo, name: logger}
+spec:
+  component: kuudra-official/logging/event-logger
+  desiredState: running
+  options:
+    level: INFO
+    message: "Macro result: ${event#macro.result}"
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Flow
+metadata: {namespace: macro-demo, name: replay}
+spec:
+  imports:
+    trigger: {kind: EventSource, name: trigger}
+    ingress: {kind: Ingress, name: ingress}
+    robot: {kind: EventHandler, name: robot}
+    logger: {kind: EventHandler, name: logger}
+  edges:
+    - {from: trigger, to: ingress}
+    - {from: ingress, to: robot}
+    - {from: robot, to: logger}
+```
+
+For real physical input replace the Handler steps with operations such as:
+
+```yaml
+steps:
+  - action: keyTap
+    key: {code: A, location: STANDARD}
+    holdMillis: 50
+  - action: mouseMove
+    position: {x: 960, y: 540, coordinateSpace: SCREEN}
+  - action: mouseClick
+    button: {button: BUTTON_1}
+    holdMillis: 50
+  - action: mouseWheel
+    wheel: {direction: UP, amount: 3}
 ```
 
 Typed objects may come directly from an exact placeholder, which preserves the JSON object instead of converting it to text:

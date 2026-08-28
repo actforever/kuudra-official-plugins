@@ -12,6 +12,19 @@ key:
   location: STANDARD
 ```
 
+## Common values
+
+The contract is deliberately independent from JNativeHook and AWT. Capture plugins translate platform events into these values, while simulation plugins translate the same values into their own driver calls.
+
+```yaml
+key: {code: LEFT_SHIFT, location: LEFT}
+button: {button: BUTTON_1}
+position: {x: 960, y: 540, coordinateSpace: SCREEN}
+wheel: {direction: UP, amount: 3}
+```
+
+This plugin has no Component resource and therefore does not appear in a Flow. Deploy its JAR beside every dependent capture, macro and driver plugin. Dependency-aware class loading guarantees that all dependents use the same value and registry class identities.
+
 At runtime the same value can be restored with:
 
 ```java

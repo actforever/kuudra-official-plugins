@@ -1,0 +1,55 @@
+apiVersion: kuudra.io/v1alpha1
+kind: EventSource
+metadata: {namespace: macro-demo, name: trigger}
+spec:
+  component: kuudra-official/hello-world/hello-world
+  desiredState: running
+  options: {intervalMillis: 500}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Ingress
+metadata: {namespace: macro-demo, name: ingress}
+spec:
+  component: kuudra-official/default/plain-ingress
+  desiredState: active
+  options: {groupKey: "${event#hello-world.message}"}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata: {namespace: macro-demo, name: robot}
+spec:
+  component: actforever/awt-robot/awt-robot
+  desiredState: running
+  options:
+    maxTotalSteps: 100
+    steps:
+      - action: if
+        condition: {ref: event#hello-world.message, operator: EQUALS, value: hello-world}
+        then:
+          - action: emit
+            eventType: macro.completed
+            data: {macro: {result: yaml-executed}}
+---
+apiVersion: kuudra.io/v1alpha1
+kind: EventHandler
+metadata: {namespace: macro-demo, name: logger}
+spec:
+  component: kuudra-official/logging/event-logger
+  desiredState: running
+  options:
+    level: INFO
+    message: "Macro result: ${event#macro.result}"
+---
+apiVersion: kuudra.io/v1alpha1
+kind: Flow
+metadata: {namespace: macro-demo, name: replay}
+spec:
+  imports:
+    trigger: {kind: EventSource, name: trigger}
+    ingress: {kind: Ingress, name: ingress}
+    robot: {kind: EventHandler, name: robot}
+    logger: {kind: EventHandler, name: logger}
+  edges:
+    - {from: trigger, to: ingress}
+    - {from: ingress, to: robot}
+    - {from: robot, to: logger}
