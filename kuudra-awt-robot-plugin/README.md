@@ -1,6 +1,6 @@
 # Kuudra AWT Robot Plugin
 
-`actforever/awt-robot` provides `event-handler/actforever/awt-robot`, a serialized physical-input macro executor based on `java.awt.Robot`. It depends on `actforever/user-interaction-spec` and accepts the same `KeySpec`, `MouseButtonSpec`, `ScreenPosition`, and `MouseWheelSpec` values emitted by capture plugins.
+`actforever/awt-robot` provides `event-handler/actforever/awt-robot`, a serialized physical-input macro executor based on `java.awt.Robot`. It depends on `actforever/user-interaction-spec` and `actforever/macro-spec`, and accepts the same `KeySpec`, `MouseButtonSpec`, `ScreenPosition`, and `MouseWheelSpec` values emitted by capture plugins.
 
 ## Component options
 
@@ -60,3 +60,35 @@ An `emit` step creates a normal Session Event and can copy input data first:
 All configured Handler resources share one fair physical Robot queue. Repeated presses are idempotent. Pausing releases physically held input and reacquires the logical held set on resume; cancellation, failure, stop, and plugin destruction release every input owned by the macro in reverse order. Abrupt operating-system process termination remains outside Java's cleanup guarantee.
 
 Robot input is registered with the shared interaction contract before injection. JNativeHook drops matching recaptured events by default; `syntheticEventPolicy: EMIT` emits them with `user-interaction.synthetic: true` for diagnostics.
+
+## Kotlin macro source
+
+Install `actforever/macro-kotlin` beside the contract and AWT plugins, then configure `script` instead of `steps`:
+
+```yaml
+options:
+  script: macros/hello.kt
+  maxTotalSteps: 10000
+  syntheticMarkerLifetimeMillis: 500
+```
+
+The relative path is resolved inside `<plugin-home>/macros`; absolute paths, traversal and symbolic-link escapes are rejected. A resource must configure exactly one of `steps` and `script`. The source is compiled during component initialization and recompiled on a later `STOPPED -> RUNNING` transition only when its size or modification time changed; it is never evaluated per Event.
+
+```kotlin
+macro {
+    press(A)
+    sleep(100)
+    release(A)
+
+    whenCondition(ref("session#enabled").eq(true), {
+        whileCondition(ref("session#cancelled").falsy(), 1000) {
+            click(BUTTON_1)
+            sleep(50)
+        }
+    }).otherwise {
+        emit("macro.skipped", "disabled")
+    }
+}
+```
+
+Kotlin is a trusted local authoring frontend, not an Event-time sandbox. The frontend executes only while compiling the file and must return `macro { ... }`; it produces the same immutable, language-neutral IR as YAML. Runtime conditions are represented by `ref(...)`, evaluated against the live Event/Session/Flow/Global contexts, and therefore keep the same pause/cancel/checkpoint semantics as YAML. `.groovy` and `.kmd` are reserved for future independent frontends and are not accepted unless a corresponding plugin registers them.

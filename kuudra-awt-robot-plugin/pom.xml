@@ -12,6 +12,7 @@
         <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-api</artifactId><scope>provided</scope></dependency>
         <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-plugin</artifactId><scope>provided</scope></dependency>
         <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-user-interaction-spec-plugin</artifactId><scope>provided</scope></dependency>
+        <dependency><groupId>io.github.actforever</groupId><artifactId>kuudra-macro-spec-plugin</artifactId><scope>provided</scope></dependency>
         <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>
