@@ -12,6 +12,7 @@
     <modules>
         <module>kuudra-user-interaction-spec-plugin</module>
         <module>kuudra-jnativehook-plugin</module>
+        <module>kuudra-awt-robot-plugin</module>
         <module>kuudra-hello-world-plugin</module>
         <module>kuudra-logging-plugin</module>
         <module>kuudra-default-plugin</module>
@@ -22,7 +23,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kuudra.version>v0.4.3</kuudra.version>
+        <kuudra.version>v0.4.4</kuudra.version>
         <junit.version>5.11.4</junit.version>
     </properties>
 
