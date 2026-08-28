@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
                                 "[{\"action\":\"keyPress\",\"key\":\"${event#user.key}\"},{\"action\":\"sleep\",\"durationMillis\":100},{\"action\":\"keyRelease\",\"key\":\"${event#user.key}\"}]"}),
                 @SpecProperty(path = "script", type = String.class,
                         description = "Macro source relative to this plugin home. Exactly one of steps or script is required. The extension selects a separately installed language frontend.",
-                        examples = {"macros/hello.kt"}),
+                        examples = {"\"macros/hello.kt\""}),
                 @SpecProperty(path = "maxTotalSteps", type = Long.class, defaultValue = "10000",
                         description = "Maximum executed steps per invocation, including nested control-flow steps.", examples = {"1000", "10000"}),
                 @SpecProperty(path = "syntheticMarkerLifetimeMillis", type = Long.class, defaultValue = "500",
