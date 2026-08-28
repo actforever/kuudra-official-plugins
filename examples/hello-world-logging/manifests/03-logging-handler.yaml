@@ -4,7 +4,7 @@ metadata:
   namespace: hello-world-demo
   name: logger
 spec:
-  component: kuudra-official/event-logger
+  component: kuudra-official/logging/event-logger
   desiredState: running
   options:
     level: INFO

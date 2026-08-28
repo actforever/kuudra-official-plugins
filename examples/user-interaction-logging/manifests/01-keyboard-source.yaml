@@ -4,5 +4,5 @@ metadata:
   namespace: macro
   name: keyboard
 spec:
-  component: actforever/jnativehook-keyboard
+  component: actforever/jnativehook/jnativehook-keyboard
   desiredState: running

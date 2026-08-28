@@ -12,7 +12,7 @@ metadata:
   namespace: demo
   name: hello-world-source
 spec:
-  component: kuudra-official/hello-world
+  component: kuudra-official/hello-world/hello-world
   desiredState: running
   options:
     intervalMillis: 1000

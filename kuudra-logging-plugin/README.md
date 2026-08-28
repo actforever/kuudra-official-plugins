@@ -9,7 +9,7 @@ metadata:
   namespace: default
   name: logger
 spec:
-  component: kuudra-official/event-logger
+  component: kuudra-official/logging/event-logger
   desiredState: running
   options:
     level: INFO

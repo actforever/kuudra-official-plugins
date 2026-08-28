@@ -18,11 +18,11 @@ Keyboard PRESSED: A
 Keyboard RELEASED: A
 ```
 
-Mouse motion is opt-in. Declare `component: actforever/jnativehook-mouse-motion` only when motion events are needed, with optional configuration:
+Mouse motion is opt-in. Declare `component: actforever/jnativehook/jnativehook-mouse-motion` only when motion events are needed, with optional configuration:
 
 ```yaml
 spec:
-  component: actforever/jnativehook-mouse-motion
+  component: actforever/jnativehook/jnativehook-mouse-motion
   desiredState: running
   options:
     output:

@@ -4,7 +4,7 @@ metadata:
   namespace: demo
   name: source
 spec:
-  component: kuudra-official/hello-world
+  component: kuudra-official/hello-world/hello-world
   desiredState: running
   options:
     intervalMillis: 500
@@ -15,7 +15,7 @@ metadata:
   namespace: demo
   name: normalize
 spec:
-  component: kuudra-official/event-mapper
+  component: kuudra-official/default/event-mapper
   desiredState: active
   options:
     outputType: demo.normalized
@@ -30,7 +30,7 @@ metadata:
   namespace: demo
   name: hello-only
 spec:
-  component: kuudra-official/event-filter
+  component: kuudra-official/default/event-filter
   desiredState: active
   options:
     mode: ALL
@@ -48,7 +48,7 @@ metadata:
   namespace: demo
   name: double-hello
 spec:
-  component: kuudra-official/sequential-event
+  component: kuudra-official/default/sequential-event
   desiredState: running
   options:
     outputType: demo.double-hello
@@ -63,7 +63,7 @@ metadata:
   namespace: demo
   name: triple-hello
 spec:
-  component: kuudra-official/any-order-event
+  component: kuudra-official/default/any-order-event
   desiredState: running
   options:
     outputType: demo.triple-hello
@@ -78,7 +78,7 @@ metadata:
   namespace: demo
   name: ingress
 spec:
-  component: kuudra-official/plain-ingress
+  component: kuudra-official/default/plain-ingress
   desiredState: active
   options:
     policy: SERIAL
@@ -89,7 +89,7 @@ metadata:
   namespace: demo
   name: logger
 spec:
-  component: kuudra-official/event-logger
+  component: kuudra-official/logging/event-logger
   desiredState: running
   options:
     level: INFO

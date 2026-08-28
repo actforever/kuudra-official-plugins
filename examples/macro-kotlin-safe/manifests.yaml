@@ -4,7 +4,7 @@ metadata:
   namespace: macro-kotlin-demo
   name: trigger
 spec:
-  component: kuudra-official/hello-world
+  component: kuudra-official/hello-world/hello-world
   desiredState: running
   options:
     intervalMillis: 500
@@ -15,7 +15,7 @@ metadata:
   namespace: macro-kotlin-demo
   name: ingress
 spec:
-  component: kuudra-official/plain-ingress
+  component: kuudra-official/default/plain-ingress
   desiredState: active
   options:
     groupKey: "${event#hello-world.message}"
@@ -26,7 +26,7 @@ metadata:
   namespace: macro-kotlin-demo
   name: robot
 spec:
-  component: actforever/awt-robot
+  component: actforever/awt-robot/awt-robot
   desiredState: running
   options:
     script: macros/safe-emit.kt
@@ -39,7 +39,7 @@ metadata:
   namespace: macro-kotlin-demo
   name: logger
 spec:
-  component: kuudra-official/event-logger
+  component: kuudra-official/logging/event-logger
   desiredState: running
   options:
     level: INFO

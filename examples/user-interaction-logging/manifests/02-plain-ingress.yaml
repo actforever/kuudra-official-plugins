@@ -4,7 +4,7 @@ metadata:
   namespace: macro
   name: input-ingress
 spec:
-  component: kuudra-official/plain-ingress
+  component: kuudra-official/default/plain-ingress
   desiredState: active
   options:
     groupKey: "${event#user-interaction.key.code}"

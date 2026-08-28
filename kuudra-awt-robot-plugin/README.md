@@ -6,7 +6,7 @@
 
 ```yaml
 spec:
-  component: event-handler/actforever/awt-robot
+  component: actforever/awt-robot/awt-robot
   desiredState: running
   options:
     maxTotalSteps: 10000

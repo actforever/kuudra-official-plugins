@@ -14,7 +14,7 @@ metadata:
   namespace: dev
   name: guarded-entry
 spec:
-  component: ingress/kuudra-official/conditional-ingress
+  component: kuudra-official/conditional-boundary/conditional-ingress
   desiredState: active
   options:
     condition: "${global#automation-enabled}"
@@ -34,7 +34,7 @@ metadata:
   namespace: dev
   name: completed-only
 spec:
-  component: egress/kuudra-official/conditional-egress
+  component: kuudra-official/conditional-boundary/conditional-egress
   desiredState: active
   options:
     condition: "${session#completed}"
