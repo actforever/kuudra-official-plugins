@@ -1,0 +1,10 @@
+id = "awt-robot"
+namespace = "actforever"
+version = "0.1.0"
+entrypoint = "io.github.actforever.kuudra.awtrobot.AwtRobotPlugin"
+
+[[dependencies]]
+namespace = "actforever"
+pluginId = "user-interaction-spec"
+mandatory = true
+versionRange = "[0.1.1,0.2.0)"
