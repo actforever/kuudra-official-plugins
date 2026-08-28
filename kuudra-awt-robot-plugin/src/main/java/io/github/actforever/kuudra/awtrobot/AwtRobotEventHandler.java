@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class AwtRobotEventHandler implements EventHandler, PausableLifecycle, PluginComponentLifecycle {
     private final RobotDevice device;
     private final AtomicBoolean started = new AtomicBoolean();
+    private final java.util.Set<CompletableFuture<Void>> inFlight = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private PluginLogger logger;
 
     public AwtRobotEventHandler() { this(SharedRobotDevice.INSTANCE); }
@@ -47,17 +48,39 @@ public final class AwtRobotEventHandler implements EventHandler, PausableLifecyc
 
     @Override public CompletionStage<Void> pause() { return CompletableFuture.completedFuture(null); }
     @Override public CompletionStage<Void> resume() { return CompletableFuture.completedFuture(null); }
-    @Override public CompletionStage<Void> stop() { started.set(false); return CompletableFuture.completedFuture(null); }
+    @Override public CompletionStage<Void> stop() {
+        started.set(false);
+        return CompletableFuture.allOf(inFlight.toArray(CompletableFuture[]::new));
+    }
 
     @Override public CompletionStage<Void> handle(KuudraEvent event, ActionContext context) {
         if (!started.get()) return CompletableFuture.failedFuture(new KuudraException("AWT Robot handler is not running"));
         final MacroProgram program;
         try { program = MacroProgram.parse(context.configuration()); }
-        catch (RuntimeException error) { return CompletableFuture.failedFuture(KuudraException.wrap("Invalid AWT Robot macro configuration", error)); }
-        return device.submit(() -> {
+        catch (RuntimeException error) {
+            KuudraException failure = KuudraException.wrap("Invalid AWT Robot macro configuration", error);
+            if (logger != null) logger.error("awt-robot.macro.configuration-invalid", failure);
+            return CompletableFuture.failedFuture(failure);
+        }
+        CompletableFuture<Void> future = device.submit(() -> {
             if (!started.get()) throw new KuudraException("AWT Robot handler stopped before macro execution");
             program.execute(event, context, device.driver());
+        }).toCompletableFuture();
+        inFlight.add(future);
+        future.whenComplete((ignored, error) -> {
+            inFlight.remove(future);
+            if (error != null && logger != null) {
+                logger.error("awt-robot.macro.failed", unwrap(error));
+            }
         });
+        return future;
+    }
+
+    private static Throwable unwrap(Throwable error) {
+        if ((error instanceof CompletionException || error instanceof ExecutionException) && error.getCause() != null) {
+            return error.getCause();
+        }
+        return error;
     }
 
     @Override public CompletionStage<Void> destroy() { return stop(); }
