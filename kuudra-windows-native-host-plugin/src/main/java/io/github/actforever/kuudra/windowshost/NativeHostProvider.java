@@ -73,7 +73,8 @@ final class NativeHostProvider implements WindowsNativeHost.Provider {
         if (client != null) return;
         try {
             Path executable = extractHost();
-            String pipeName = "kuudra-" + UUID.randomUUID();
+            String commandPipeName = "kuudra-command-" + UUID.randomUUID();
+            String eventPipeName = "kuudra-event-" + UUID.randomUUID();
             Path journal = home.resolve("state").resolve("active-process-operations.json");
             Files.createDirectories(journal.getParent());
             long jvmPid = ProcessHandle.current().pid();
@@ -81,7 +82,8 @@ final class NativeHostProvider implements WindowsNativeHost.Provider {
             launch.fMask = 0x00000040;
             launch.lpVerb = "runas";
             launch.lpFile = executable.toString();
-            launch.lpParameters = "--pipe \"" + pipeName + "\" --client-pid " + jvmPid + " --journal \"" + journal + "\"";
+            launch.lpParameters = "--command-pipe \"" + commandPipeName + "\" --event-pipe \"" + eventPipeName
+                    + "\" --client-pid " + jvmPid + " --journal \"" + journal + "\"";
             launch.nShow = WinUser.SW_HIDE;
             if (!Shell32.INSTANCE.ShellExecuteEx(launch)) {
                 int error = Kernel32.INSTANCE.GetLastError();
@@ -90,8 +92,9 @@ final class NativeHostProvider implements WindowsNativeHost.Provider {
             }
             processHandle = launch.hProcess;
             serverPid = Kernel32.INSTANCE.GetProcessId(processHandle);
-            WinNT.HANDLE pipe = connectPipe(pipeName, serverPid);
-            NativePipeClient connected = new NativePipeClient(pipe);
+            WinNT.HANDLE commandPipe = connectPipe(commandPipeName, serverPid);
+            WinNT.HANDLE eventPipe = connectPipe(eventPipeName, serverPid);
+            NativePipeClient connected = new NativePipeClient(commandPipe, eventPipe);
             connected.onEvent(this::handleEvent);
             JsonNode hello = join(connected.request("HELLO", Map.of("clientPid", jvmPid, "protocolMajor", 1, "protocolMinor", 0)));
             if (hello.path("serverPid").asLong() != serverPid || hello.path("protocolMajor").asInt() != 1) {
@@ -167,9 +170,12 @@ final class NativeHostProvider implements WindowsNativeHost.Provider {
         JsonNode payload = envelope.path("payload");
         UUID id = UUID.fromString(payload.path("operationId").asText());
         CompletableFuture<ProcessOperationResult> completion = operations.remove(id);
-        if (completion != null) completion.complete(new ProcessOperationResult(id, payload.path("target").asText(),
-                payload.path("pid").asLong(), ProcessOperationOutcome.valueOf(payload.path("outcome").asText()),
-                Instant.parse(payload.path("startedAt").asText()), Instant.parse(payload.path("completedAt").asText())));
+        if (completion != null) {
+            ProcessOperationResult result = new ProcessOperationResult(id, payload.path("target").asText(),
+                    payload.path("pid").asLong(), ProcessOperationOutcome.valueOf(payload.path("outcome").asText()),
+                    Instant.parse(payload.path("startedAt").asText()), Instant.parse(payload.path("completedAt").asText()));
+            completion.completeAsync(() -> result);
+        }
     }
 
     private static JsonNode join(CompletionStage<JsonNode> stage) {

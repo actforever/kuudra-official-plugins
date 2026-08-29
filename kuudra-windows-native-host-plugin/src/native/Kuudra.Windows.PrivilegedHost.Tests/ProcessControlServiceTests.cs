@@ -9,10 +9,12 @@ public sealed class ProcessControlServiceTests
     [Fact]
     public void ArgumentsRequireEveryBootstrapValue()
     {
-        var parsed = Arguments.Parse(["--pipe", "test-pipe", "--client-pid", "42", "--journal", "state.json"]);
-        Assert.Equal("test-pipe", parsed.Pipe);
+        var parsed = Arguments.Parse(["--command-pipe", "command", "--event-pipe", "event",
+            "--client-pid", "42", "--journal", "state.json"]);
+        Assert.Equal("command", parsed.CommandPipe);
+        Assert.Equal("event", parsed.EventPipe);
         Assert.Equal((uint)42, parsed.ClientPid);
-        Assert.Throws<ArgumentException>(() => Arguments.Parse(["--pipe", "missing"]));
+        Assert.Throws<ArgumentException>(() => Arguments.Parse(["--command-pipe", "missing"]));
     }
 
     [Fact]

@@ -12,6 +12,8 @@ namespace Kuudra.Windows.PrivilegedHost;
 
 internal static class Program
 {
+    private const int PipeBufferBytes = 64 * 1024;
+
     public static async Task<int> Main(string[] args)
     {
         try
@@ -19,13 +21,14 @@ internal static class Program
             var options = Arguments.Parse(args);
             var service = new ProcessControlService(options.Journal);
             await service.RecoverAsync();
-            await using var server = CreatePipe(options.Pipe);
-            await server.WaitForConnectionAsync();
-            if (!NativeMethods.GetNamedPipeClientProcessId(server.SafePipeHandle, out var clientPid)
-                || clientPid != options.ClientPid)
-                throw new HostFailure("CLIENT_IDENTITY_MISMATCH", "Named Pipe client PID does not match the launching JVM");
+            await using var commandServer = CreatePipe(options.CommandPipe);
+            await using var eventServer = CreatePipe(options.EventPipe);
+            await commandServer.WaitForConnectionAsync();
+            await eventServer.WaitForConnectionAsync();
+            VerifyClient(commandServer, options.ClientPid, "command");
+            VerifyClient(eventServer, options.ClientPid, "event");
 
-            var connection = new ProtocolConnection(server, service, options.ClientPid);
+            var connection = new ProtocolConnection(commandServer, eventServer, service, options.ClientPid);
             service.Attach(connection);
             try { await connection.RunAsync(); }
             catch (IOException) { }
@@ -39,6 +42,13 @@ internal static class Program
         }
     }
 
+    private static void VerifyClient(NamedPipeServerStream server, uint expectedClientPid, string role)
+    {
+        if (!NativeMethods.GetNamedPipeClientProcessId(server.SafePipeHandle, out var clientPid)
+            || clientPid != expectedClientPid)
+            throw new HostFailure("CLIENT_IDENTITY_MISMATCH", $"Named Pipe {role} client PID does not match the launching JVM");
+    }
+
     private static NamedPipeServerStream CreatePipe(string name)
     {
         var identity = WindowsIdentity.GetCurrent();
@@ -48,11 +58,11 @@ internal static class Program
         security.SetAccessRuleProtection(true, false);
         security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.FullControl, AccessControlType.Allow));
         return NamedPipeServerStreamAcl.Create(name, PipeDirection.InOut, 1, PipeTransmissionMode.Byte,
-            PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, security);
+            PipeOptions.Asynchronous, PipeBufferBytes, PipeBufferBytes, security);
     }
 }
 
-internal sealed record Arguments(string Pipe, uint ClientPid, string Journal)
+internal sealed record Arguments(string CommandPipe, string EventPipe, uint ClientPid, string Journal)
 {
     public static Arguments Parse(string[] args)
     {
@@ -63,7 +73,8 @@ internal sealed record Arguments(string Pipe, uint ClientPid, string Journal)
                 throw new ArgumentException("Expected --name value arguments");
             values[args[i][2..]] = args[i + 1];
         }
-        return new Arguments(Required(values, "pipe"), uint.Parse(Required(values, "client-pid")), Required(values, "journal"));
+        return new Arguments(Required(values, "command-pipe"), Required(values, "event-pipe"),
+            uint.Parse(Required(values, "client-pid")), Required(values, "journal"));
     }
 
     private static string Required(Dictionary<string, string> values, string key) =>
@@ -74,14 +85,17 @@ internal sealed record Arguments(string Pipe, uint ClientPid, string Journal)
 internal sealed class ProtocolConnection
 {
     private const int MaxFrameBytes = 64 * 1024;
-    private readonly Stream stream;
+    private readonly Stream commandStream;
+    private readonly Stream eventStream;
     private readonly ProcessControlService service;
     private readonly uint expectedClientPid;
-    private readonly SemaphoreSlim writeLock = new(1, 1);
+    private readonly SemaphoreSlim commandWriteLock = new(1, 1);
+    private readonly SemaphoreSlim eventWriteLock = new(1, 1);
 
-    public ProtocolConnection(Stream stream, ProcessControlService service, uint expectedClientPid)
+    public ProtocolConnection(Stream commandStream, Stream eventStream, ProcessControlService service, uint expectedClientPid)
     {
-        this.stream = stream;
+        this.commandStream = commandStream;
+        this.eventStream = eventStream;
         this.service = service;
         this.expectedClientPid = expectedClientPid;
     }
@@ -111,17 +125,17 @@ internal sealed class ProtocolConnection
                         "SHUTDOWN" => await service.ShutdownAsync(),
                         _ => throw new HostFailure("UNKNOWN_OPERATION", $"Unknown native host operation: {operation}")
                     };
-                    await WriteAsync(new { kind = "response", version = 1, requestId, success = true, payload = response });
+                    await WriteCommandAsync(new { kind = "response", version = 1, requestId, success = true, payload = response });
                     if (operation == "SHUTDOWN") return;
                 }
                 catch (HostFailure error)
                 {
-                    await WriteAsync(new { kind = "response", version = 1, requestId, success = false,
+                    await WriteCommandAsync(new { kind = "response", version = 1, requestId, success = false,
                         errorCode = error.Code, errorMessage = error.Message });
                 }
                 catch (Exception error)
                 {
-                    await WriteAsync(new { kind = "response", version = 1, requestId, success = false,
+                    await WriteCommandAsync(new { kind = "response", version = 1, requestId, success = false,
                         errorCode = "INTERNAL_ERROR", errorMessage = error.Message });
                 }
             }
@@ -138,7 +152,7 @@ internal sealed class ProtocolConnection
             capabilities = new[] { "PROCESS_CONTROL" } };
     }
 
-    public Task OperationCompletedAsync(OperationState operation) => WriteAsync(new
+    public Task OperationCompletedAsync(OperationState operation) => WriteEventAsync(new
     {
         kind = "event", version = 1, operation = "PROCESS_OPERATION_COMPLETED",
         payload = new { operationId = operation.Id, target = operation.Target, pid = operation.Pid,
@@ -161,13 +175,16 @@ internal sealed class ProtocolConnection
         var offset = 0;
         while (offset < buffer.Length)
         {
-            var read = await stream.ReadAsync(buffer.AsMemory(offset));
+            var read = await commandStream.ReadAsync(buffer.AsMemory(offset));
             if (read == 0) throw new EndOfStreamException();
             offset += read;
         }
     }
 
-    private async Task WriteAsync(object value)
+    private Task WriteCommandAsync(object value) => WriteAsync(commandStream, commandWriteLock, value);
+    private Task WriteEventAsync(object value) => WriteAsync(eventStream, eventWriteLock, value);
+
+    private static async Task WriteAsync(Stream stream, SemaphoreSlim writeLock, object value)
     {
         var payload = JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions.Default);
         if (payload.Length > MaxFrameBytes) throw new HostFailure("FRAME_TOO_LARGE", "Response exceeds the frame limit");
@@ -178,7 +195,6 @@ internal sealed class ProtocolConnection
         {
             await stream.WriteAsync(header);
             await stream.WriteAsync(payload);
-            await stream.FlushAsync();
         }
         finally { writeLock.Release(); }
     }
