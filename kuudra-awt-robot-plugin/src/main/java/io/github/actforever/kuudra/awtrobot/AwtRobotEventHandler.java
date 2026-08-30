@@ -1,10 +1,8 @@
 package io.github.actforever.kuudra.awtrobot;
 
 import io.github.actforever.kuudra.api.KuudraException;
-import io.github.actforever.kuudra.api.action.ActionContext;
-import io.github.actforever.kuudra.api.component.EventHandler;
+import io.github.actforever.kuudra.api.event.EventHandlerContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.api.lifecycle.PausableLifecycle;
 import io.github.actforever.kuudra.plugin.*;
 import io.github.actforever.kuudra.plugin.annotation.*;
 import io.github.actforever.kuudra.macro.*;
@@ -15,13 +13,12 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@io.github.actforever.kuudra.plugin.annotation.EventHandler(value = "awt-robot",
-        instancePolicy = @InstancePolicy(threadSafe = false))
-@ComponentDoc(purpose = "Executes a user-defined, cooperatively cancellable keyboard and mouse macro through AWT Robot.",
+@Controller(value = "awt-robot", policy = @io.github.actforever.kuudra.plugin.annotation.ResourcePolicy(allowParallel = false))
+@ResourceDoc(purpose = "Executes a user-defined, cooperatively cancellable keyboard and mouse macro through AWT Robot.",
         lifecyclePhases = {"initialize: bind the plugin logger", "start: initialize the shared physical Robot device",
                 "pause: Runtime checkpoints release held input and preserve logical progress",
                 "resume: checkpoints restore logically held input", "stop/destroy: reject work and release input"},
-        configuration = {
+        options = {
                 @SpecProperty(path = "steps[]", type = Object[].class,
                         description = "Ordered macro steps. Supported actions include keyboard, mouse, control flow, Session cancellation and Event emission.",
                         examples = {"[{\"action\":\"keyTap\",\"key\":{\"code\":\"F24\",\"location\":\"STANDARD\"}}]",
@@ -34,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 @SpecProperty(path = "syntheticMarkerLifetimeMillis", type = Long.class, defaultValue = "500",
                         description = "Best-effort correlation lifetime used to prevent recaptured Robot input from feeding back into Flows.", examples = {"250", "500"})
         })
-public final class AwtRobotEventHandler implements EventHandler, PausableLifecycle, PluginComponentLifecycle {
+public final class AwtRobotEventHandler implements ResourceLifecycle {
     private final RobotDevice device;
     private final AtomicBoolean started = new AtomicBoolean();
     private final java.util.Set<CompletableFuture<Void>> inFlight = java.util.concurrent.ConcurrentHashMap.newKeySet();
@@ -48,16 +45,16 @@ public final class AwtRobotEventHandler implements EventHandler, PausableLifecyc
     public AwtRobotEventHandler() { this(SharedRobotDevice.INSTANCE); }
     AwtRobotEventHandler(RobotDevice device) { this.device = java.util.Objects.requireNonNull(device); }
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
         logger = context.logger();
-        componentConfiguration = context.configuration();
-        pluginHome = context.plugin().home();
+        componentConfiguration = context.options();
+        pluginHome = context.home();
         try {
             boolean hasSteps = componentConfiguration.containsKey("steps");
             boolean hasScript = componentConfiguration.containsKey("script");
             if (hasSteps == hasScript) throw new KuudraException("Exactly one of steps or script must be configured");
             if (hasScript) { script = resolveScript(String.valueOf(componentConfiguration.get("script"))); compileScript(true); }
-            else MacroCodec.decode(componentConfiguration);
+            else compiledScript = MacroCodec.decode(componentConfiguration);
             return CompletableFuture.completedFuture(null);
         } catch (RuntimeException error) { return CompletableFuture.failedFuture(KuudraException.wrap("Invalid AWT Robot macro configuration", error)); }
     }
@@ -74,10 +71,11 @@ public final class AwtRobotEventHandler implements EventHandler, PausableLifecyc
         return CompletableFuture.allOf(inFlight.toArray(CompletableFuture[]::new));
     }
 
-    @Override public CompletionStage<Void> handle(KuudraEvent event, ActionContext context) {
+    @io.github.actforever.kuudra.plugin.annotation.EventHandler(value = "execute", purpose = "Execute the initialized macro")
+    public CompletionStage<Void> handle(KuudraEvent event, EventHandlerContext context) {
         if (!started.get()) return CompletableFuture.failedFuture(new KuudraException("AWT Robot handler is not running"));
         final MacroProgram program;
-        try { program = new MacroProgram(script == null ? MacroCodec.decode(context.configuration()) : compiledScript); }
+        try { program = new MacroProgram(compiledScript); }
         catch (RuntimeException error) {
             KuudraException failure = KuudraException.wrap("Invalid AWT Robot macro configuration", error);
             if (logger != null) logger.error("awt-robot.macro.configuration-invalid", failure);

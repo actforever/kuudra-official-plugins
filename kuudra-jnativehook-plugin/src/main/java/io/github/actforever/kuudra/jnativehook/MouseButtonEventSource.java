@@ -4,18 +4,18 @@ import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener;
 import io.github.actforever.kuudra.interaction.*;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
-import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.ResourcePolicy;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource(value = "jnativehook-mouse-button",
-        instancePolicy = @InstancePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-button", threadSafe = true))
-@ComponentDoc(purpose = "Captures global mouse-button press and release events without synthesizing click gestures.",
+        policy = @ResourcePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-button", allowParallel = true))
+@ResourceDoc(purpose = "Captures global mouse-button press and release events without synthesizing click gestures.",
         lifecyclePhases = {"start: attach mouse-button listener", "pause: detach listener", "resume: reattach listener", "stop: release listener and native hook lease"},
-        configuration = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+        options = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
                 allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true."),
         emittedEvents = {
                 @EventEmission(stage = "native mouse pressed", eventType = InteractionEvents.MOUSE_BUTTON_PRESSED,

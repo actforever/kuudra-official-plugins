@@ -1,0 +1,30 @@
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
+metadata:
+  namespace: hello-world-demo
+  name: hello-to-log
+spec:
+  resources:
+    source: {kind: EventSource, name: source}
+    ingress: {kind: Ingress, name: ingress}
+    logger: {kind: Controller, name: logger}
+  nodes:
+    source: {resource: source}
+    ingress:
+      resource: ingress
+      arguments: {groupKey: "${event#hello-world.message}"}
+      session:
+        mode: CREATE
+        scheduling: {policy: SERIAL, groupScope: INGRESS, maxParallelSessions: 1, queueCapacity: 32}
+    logger:
+      resource: logger
+      handler: log
+      arguments:
+        level: INFO
+        message: "received ${event#hello-world.message}"
+        includeData: true
+  edges:
+    - from: source
+      to: ingress
+    - from: ingress
+      to: logger

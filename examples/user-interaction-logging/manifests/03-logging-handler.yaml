@@ -1,12 +1,7 @@
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata:
   namespace: macro
   name: input-logger
 spec:
-  component: kuudra-official/logging/event-logger
-  desiredState: running
-  options:
-    level: INFO
-    message: "Keyboard ${event#user-interaction.phase}: ${event#user-interaction.key.code}"
-    includeData: true
+  template: kuudra-official/logging/event-logger

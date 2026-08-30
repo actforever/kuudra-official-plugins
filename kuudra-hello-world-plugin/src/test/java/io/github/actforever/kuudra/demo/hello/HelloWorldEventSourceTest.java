@@ -1,7 +1,7 @@
 package io.github.actforever.kuudra.demo.hello;
 
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
+import io.github.actforever.kuudra.plugin.ResourceContext;
 import io.github.actforever.kuudra.plugin.PluginContext;
 import io.github.actforever.kuudra.plugin.PluginResourceRegistry;
 import io.github.actforever.kuudra.plugin.PluginRuntimeServices;
@@ -23,16 +23,16 @@ class HelloWorldEventSourceTest {
     @Test
     void emitsConfiguredHelloWorldEvent() throws Exception {
         var documentation = HelloWorldEventSource.class.getAnnotation(
-                io.github.actforever.kuudra.plugin.annotation.ComponentDoc.class);
+                io.github.actforever.kuudra.plugin.annotation.ResourceDoc.class);
         assertNotNull(documentation);
-        assertEquals("intervalMillis", documentation.configuration()[0].path());
-        assertEquals("1000", documentation.configuration()[0].defaultValue());
+        assertEquals("intervalMillis", documentation.options()[0].path());
+        assertEquals("1000", documentation.options()[0].defaultValue());
         HelloWorldEventSource source = new HelloWorldEventSource();
         PluginResourceRegistry resources = new PluginResourceRegistry() {
             @Override public void register(String name, AutoCloseable resource) { }
             @Override public List<String> names() { return List.of(); }
         };
-        source.initialize(new PluginComponentContext("event-source/kuudra-official/hello-world",
+        source.initialize(new ResourceContext("event-source/kuudra-official/hello-world",
                 new PluginContext("hello-world", "kuudra-official", home, resources,
                         PluginRuntimeServices.unavailable(), (level, message, fields, error) -> { }),
                 Map.of("intervalMillis", 10)));

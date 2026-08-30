@@ -1,74 +1,48 @@
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
-metadata:
-  namespace: macro-kotlin-demo
-  name: trigger
+metadata: {namespace: macro-kotlin-demo, name: trigger}
 spec:
-  component: kuudra-official/hello-world/hello-world
-  desiredState: running
-  options:
-    intervalMillis: 500
+  template: kuudra-official/hello-world/hello-world
+  options: {intervalMillis: 500}
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: Ingress
-metadata:
-  namespace: macro-kotlin-demo
-  name: ingress
-spec:
-  component: kuudra-official/default/plain-ingress
-  desiredState: active
-  options:
-    groupKey: "${event#hello-world.message}"
+metadata: {namespace: macro-kotlin-demo, name: ingress}
+spec: {template: kuudra-official/default/plain-ingress}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
-metadata:
-  namespace: macro-kotlin-demo
-  name: robot
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
+metadata: {namespace: macro-kotlin-demo, name: robot}
 spec:
-  component: actforever/awt-robot/awt-robot
-  desiredState: running
-  options:
-    script: macros/safe-emit.kt
-    maxTotalSteps: 100
-    syntheticMarkerLifetimeMillis: 500
+  template: actforever/awt-robot/awt-robot
+  options: {script: macros/safe-emit.kt, maxTotalSteps: 100, syntheticMarkerLifetimeMillis: 500}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
-metadata:
-  namespace: macro-kotlin-demo
-  name: logger
-spec:
-  component: kuudra-official/logging/event-logger
-  desiredState: running
-  options:
-    level: INFO
-    message: "Kotlin macro emitted ${event#macro.result}"
-    includeData: true
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
+metadata: {namespace: macro-kotlin-demo, name: logger}
+spec: {template: kuudra-official/logging/event-logger}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: Flow
-metadata:
-  namespace: macro-kotlin-demo
-  name: safe-kotlin-macro
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
+metadata: {namespace: macro-kotlin-demo, name: safe-kotlin-macro}
 spec:
-  imports:
-    source:
-      kind: EventSource
-      name: trigger
+  resources:
+    source: {kind: EventSource, name: trigger}
+    ingress: {kind: Ingress, name: ingress}
+    robot: {kind: Controller, name: robot}
+    logger: {kind: Controller, name: logger}
+  nodes:
+    source: {resource: source}
     ingress:
-      kind: Ingress
-      name: ingress
-    robot:
-      kind: EventHandler
-      name: robot
+      resource: ingress
+      arguments: {groupKey: "${event#hello-world.message}"}
+      session: {mode: CREATE}
+    robot: {resource: robot, handler: execute}
     logger:
-      kind: EventHandler
-      name: logger
+      resource: logger
+      handler: log
+      arguments: {level: INFO, message: "Kotlin macro emitted ${event#macro.result}", includeData: true}
   edges:
-    - from: source
-      to: ingress
-    - from: ingress
-      to: robot
-    - from: robot
-      to: logger
+    - {from: source, to: ingress}
+    - {from: ingress, to: robot}
+    - {from: robot, to: logger}

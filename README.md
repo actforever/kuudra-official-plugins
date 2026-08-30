@@ -1,15 +1,15 @@
 # Kuudra Plugins
 
-> Windows 原生能力：`kuudra-windows-native-host-plugin`（`actforever/windows-native-host`）管理受控 C# sidecar、UAC 与 Named Pipe；`kuudra-process-control-plugin`（`actforever/process-control`）提供限时进程暂停/恢复 EventHandler。安全验证见 [`examples/process-control-safe`](examples/process-control-safe/README.md)。父插件本身没有 Component，只有实际声明并选择特权资源时才弹 UAC。
+> Windows 原生能力：`kuudra-windows-native-host-plugin`（`actforever/windows-native-host`）管理受控 C# sidecar、UAC 与 Named Pipe；`kuudra-process-control-plugin`（`actforever/process-control`）提供含 `suspend`/`resume` 具名入口的 Controller。安全验证见 [`examples/process-control-safe`](examples/process-control-safe/README.md)。父插件本身不发布 ResourceTemplate，只有实际 claim 特权 Resource 时才弹 UAC。
 
 本仓库存放 Kuudra 的可部署插件、共享业务规约和端到端配置示例。它与 Kuudra 内核仓库分离：内核只提供插件、事件流、会话和调谐基础设施，不会隐式注册这里的任何组件。
 
 ## 版本与运行环境
 
 - Java 17 或更高版本；
-- 当前插件基于 Kuudra `v0.4.4`；
-- 仓库自身当前为 `0.1.0-SNAPSHOT` 开发版本；
-- 插件身份始终是 `namespace/pluginId`，组件引用格式为 `plugin-namespace/plugin-id/component-name`。
+- 当前插件基于 Kuudra `v0.5.0-alpha-1`；
+- 仓库自身当前为 `0.2.0-alpha-1`；
+- 插件身份始终是 `namespace/pluginId`，ResourceTemplate 引用格式为 `plugin-namespace/plugin-id/template-name`。
 
 插件 JAR 统一部署到 `<home-directory>/plugins`。Kuudra 会严格加载目录中的每个 JAR，普通依赖 JAR、损坏归档或依赖不合法的插件都会使启动失败。
 
@@ -47,7 +47,7 @@ user-interaction-spec   macro-spec
 - 宏规约描述动作，不依赖 AWT 或 JNativeHook；
 - 驱动层将标准动作转换成具体平台调用；
 - 插件依赖保证共享 POJO 由同一个依赖 ClassLoader 提供；
-- Flow 负责路由，Ingress 负责建立 Session，SessionCoordinationPolicy 负责调度与依赖关系。
+- Ability 负责 claim、路由和控制；Ingress 节点通过 CREATE/JOIN 建立或加入 Session，并就地声明调度与依赖。
 
 ## 构建
 
@@ -75,11 +75,11 @@ mvn -pl kuudra-jnativehook-plugin -am clean package
 ## 部署与配置
 
 1. 将需要的插件 JAR 复制到 `<home-directory>/plugins`；
-2. 在 `<home-directory>/manifests` 中声明组件资源和 Flow；
-3. 在 `config.yaml` 中激活清单使用的资源命名空间；
-4. 启动 Kuudra，并通过 App/Web API 查询插件、组件文档、资源调谐状态和 Session。
+2. 在 `<home-directory>/manifests` 中声明 Resource 和 Ability；
+3. 在 `<home-directory>/ability-profiles` 声明 Profile，并在 `config.yaml` 的 `ability-profiles` 中选择；
+4. 启动 Kuudra，并通过 App/Web API 查询插件、ResourceTemplate、Ability、Resource 和 Session。
 
-加载插件本身不会构建组件。只有资源清单显式声明组件，并且资源命名空间被选中时，Kuudra 才会创建和调谐实例。资源由 `kind/namespace/name` 唯一标识；同一资源被多个 Flow 导入时共享同一个实例。
+加载插件本身不会构建 Resource。只有有效 Ability claim 才会物化并调谐实例。Resource 由 `kind/namespace/name` 唯一标识；被多个 Ability claim 时共享同一个实例。
 
 ## 可运行示例
 
@@ -98,9 +98,9 @@ mvn -pl kuudra-jnativehook-plugin -am clean package
 - 插件元数据位于 `META-INF/kuudra-plugin/metadata.toml`；
 - 插件版本使用不带 `v` 的点分数字格式，可附加 prerelease/build 后缀；
 - 依赖必须声明 namespace、pluginId、mandatory 和 versionRange；
-- 组件使用结构化 `@ComponentDoc`、`@SpecProperty` 和 `@EventEmission` 描述用途、配置及输出；
+- Resource 使用结构化 `@ResourceDoc`、`@SpecProperty` 和 `@EventEmission` 描述用途、options、arguments 及输出；
 - 插件通过 `PluginLogger` 记录日志，不直接绑定 SLF4J/Logback；
-- 组件配置使用 `PluginComponentContext.configuration(..., Class<T>, defaultValue)` 完成统一类型转换；
+- Resource 静态配置使用 `ResourceContext.option(...)`，Controller 动态参数使用 `EventHandlerContext.arguments()`；
 - 修改组件契约时，同步更新模块 README、组件文档注解和相关 `examples/` 清单。
 
-各模块的配置参数、事件结构和限制以模块 README 及 Kuudra 暴露的 ComponentTemplate 文档 API 为准。
+各模块的配置参数、事件结构和限制以模块 README 及 Kuudra 暴露的 ResourceTemplate API 为准。

@@ -5,9 +5,9 @@ import io.github.actforever.kuudra.api.component.EventSource;
 import io.github.actforever.kuudra.api.event.EventData;
 import io.github.actforever.kuudra.api.event.EventEmitter;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
-import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.ResourceContext;
+import io.github.actforever.kuudra.plugin.ResourceLifecycle;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
@@ -18,9 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource("session-probe-source")
-@ComponentDoc(purpose = "Emits a finite, deterministic Event sequence for Session scheduling and dependency diagnostics.",
+@ResourceDoc(purpose = "Emits a finite, deterministic Event sequence for Session scheduling and dependency diagnostics.",
         lifecyclePhases = {"initialize: validate timing and Event metadata", "start: emit the configured sequence", "stop: cancel pending emissions"},
-        configuration = {
+        options = {
                 @SpecProperty(path = "eventType", type = String.class, defaultValue = "\"session-probe.tick\"", description = "Emitted Event type."),
                 @SpecProperty(path = "role", type = String.class, defaultValue = "\"probe\"", description = "Role copied to event#session-probe.role."),
                 @SpecProperty(path = "groupKey", type = String.class, defaultValue = "\"default\"", description = "Stable value copied to event#session-probe.groupKey."),
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
         emittedEvents = @EventEmission(stage = "each configured interval", eventType = "session-probe.tick",
                 description = "Carries role, groupKey and a monotonically increasing sequence.",
                 dataExample = "{\"session-probe\":{\"role\":\"window\",\"groupKey\":\"window\",\"sequence\":1}}"))
-public final class SessionProbeEventSource implements EventSource, PluginComponentLifecycle {
+public final class SessionProbeEventSource implements EventSource, ResourceLifecycle {
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicLong sequence = new AtomicLong();
     private volatile EventEmitter emitter;
@@ -43,13 +43,13 @@ public final class SessionProbeEventSource implements EventSource, PluginCompone
     private long intervalMillis;
     private long maxEvents;
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
-        eventType = context.configuration("eventType", String.class, "session-probe.tick");
-        role = context.configuration("role", String.class, "probe");
-        groupKey = context.configuration("groupKey", String.class, "default");
-        initialDelayMillis = context.configuration("initialDelayMillis", Long.class, 0L);
-        intervalMillis = context.configuration("intervalMillis", Long.class, 1_000L);
-        maxEvents = context.configuration("maxEvents", Long.class, 1L);
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
+        eventType = context.option("eventType", String.class, "session-probe.tick");
+        role = context.option("role", String.class, "probe");
+        groupKey = context.option("groupKey", String.class, "default");
+        initialDelayMillis = context.option("initialDelayMillis", Long.class, 0L);
+        intervalMillis = context.option("intervalMillis", Long.class, 1_000L);
+        maxEvents = context.option("maxEvents", Long.class, 1L);
         if (initialDelayMillis < 0 || intervalMillis < 1 || maxEvents < 1) {
             throw new KuudraException("Probe timing requires initialDelayMillis >= 0, intervalMillis > 0 and maxEvents > 0");
         }

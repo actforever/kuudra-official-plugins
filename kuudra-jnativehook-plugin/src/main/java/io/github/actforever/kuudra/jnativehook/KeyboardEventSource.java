@@ -4,20 +4,20 @@ import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 import io.github.actforever.kuudra.interaction.*;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
-import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.ResourcePolicy;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource(value = "jnativehook-keyboard",
-        instancePolicy = @InstancePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-keyboard", threadSafe = true))
-@ComponentDoc(purpose = "Captures global keyboard press and release events and emits platform-neutral logical keys.",
+        policy = @ResourcePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-keyboard", allowParallel = true))
+@ResourceDoc(purpose = "Captures global keyboard press and release events and emits platform-neutral logical keys.",
         lifecyclePhases = {"start: acquire the shared native hook and attach the keyboard listener",
                 "pause: detach the listener while preserving the native hook lease",
                 "resume: reattach the listener", "stop: detach and release the native hook lease"},
-        configuration = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+        options = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
                 allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true."),
         emittedEvents = {
                 @EventEmission(stage = "native key pressed", eventType = InteractionEvents.KEY_PRESSED,

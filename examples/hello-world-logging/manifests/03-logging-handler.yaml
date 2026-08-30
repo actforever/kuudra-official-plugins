@@ -1,12 +1,7 @@
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata:
   namespace: hello-world-demo
   name: logger
 spec:
-  component: kuudra-official/logging/event-logger
-  desiredState: running
-  options:
-    level: INFO
-    message: "received ${event#hello-world.message}"
-    includeData: true
+  template: kuudra-official/logging/event-logger

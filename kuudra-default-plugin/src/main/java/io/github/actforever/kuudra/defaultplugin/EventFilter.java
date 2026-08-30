@@ -2,7 +2,7 @@ package io.github.actforever.kuudra.defaultplugin;
 
 import io.github.actforever.kuudra.api.context.EventContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Collection;
@@ -11,12 +11,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @io.github.actforever.kuudra.plugin.annotation.EventAdapter("event-filter")
-@ComponentDoc(purpose="Passes only Events matching declarative rules.", configuration={
+@ResourceDoc(purpose="Passes only Events matching declarative rules.", arguments={
         @SpecProperty(path="mode", type=String.class, description="Rule aggregation mode.", defaultValue="ALL", allowedValues={"ALL","ANY"}, examples={"\"ALL\""}),
         @SpecProperty(path="negate", type=Boolean.class, description="Negates the aggregated result.", defaultValue="false", examples={"false"}),
         @SpecProperty(path="rules[]", type=Map.class, required=true, description="Rules with path, operator and optional value.", examples={"{\"path\":\"type\",\"operator\":\"EQUALS\",\"value\":\"demo.normalized\"}"})
 })
-public final class EventFilter implements io.github.actforever.kuudra.api.component.EventAdapter {
+public final class EventFilter implements io.github.actforever.kuudra.api.component.EventAdapter,
+        io.github.actforever.kuudra.plugin.ResourceLifecycle {
     @Override public List<KuudraEvent> adapt(KuudraEvent event, EventContext context) {
         List<?> rules = context.configuration("rules", List.class);
         if (rules.isEmpty()) throw new IllegalArgumentException("rules must not be empty");

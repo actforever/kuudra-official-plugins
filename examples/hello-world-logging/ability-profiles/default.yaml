@@ -1,0 +1,6 @@
+apiVersion: kuudra.io/v1alpha2
+kind: AbilityProfile
+metadata:
+  name: default
+spec:
+  abilities: [hello-world-demo/hello-to-log]

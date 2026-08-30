@@ -1,6 +1,5 @@
 package io.github.actforever.kuudra.awtrobot;
 
-import io.github.actforever.kuudra.api.action.ActionContext;
 import io.github.actforever.kuudra.api.context.*;
 import io.github.actforever.kuudra.api.event.*;
 import io.github.actforever.kuudra.api.session.CurrentSessionControl;
@@ -102,7 +101,7 @@ class MacroProgramTest {
             @Override public ExecutionDecision poll() { return decision.get(); }
             @Override public java.util.concurrent.CompletionStage<ExecutionDecision> checkpoint() { return resumed; }
         };
-        ActionContext context = context(configuration, new MutableSession(), new ArrayList<>(), new AtomicBoolean(), execution);
+        EventHandlerContext context = context(configuration, new MutableSession(), new ArrayList<>(), new AtomicBoolean(), execution);
         CompletableFuture<Void> running = CompletableFuture.runAsync(() -> MacroProgram.parse(configuration)
                 .execute(KuudraEvent.of("input", Map.of()), context, driver));
         awaitOperations(driver, 1);
@@ -133,20 +132,32 @@ class MacroProgramTest {
 
     private static Map<String, Object> step(String action, String key, Object value) { return Map.of("action", action, key, value); }
     private static Object encoded(Object value) { return ContextCodecs.defaultCodec().encode(value); }
-    private static ActionContext context(Map<String, Object> configuration, MutableSession session,
+    private static EventHandlerContext context(Map<String, Object> configuration, MutableSession session,
                                          List<KuudraEvent> emitted, AtomicBoolean cancelled) {
         return context(configuration, session, emitted, cancelled, () -> ExecutionDecision.CONTINUE);
     }
-    private static ActionContext context(Map<String, Object> configuration, MutableSession session,
+    private static EventHandlerContext context(Map<String, Object> configuration, MutableSession session,
                                          List<KuudraEvent> emitted, AtomicBoolean cancelled, ExecutionControl execution) {
         UUID id = UUID.randomUUID();
         CurrentSessionControl control = new CurrentSessionControl() {
             @Override public UUID sessionId() { return id; }
             @Override public boolean requestCancellation(String reason) { return !cancelled.getAndSet(true); }
         };
-        return new ActionContext(id, "flow", session.snapshot(), session, Map.of(), null,
-                execution, event -> { emitted.add(event); return true; }, control,
-                Map.of(), null, configuration);
+        MutableValues shared = new MutableValues();
+        return new EventHandlerContext() {
+            @Override public UUID sessionId() { return id; }
+            @Override public String abilityId() { return "test/ability"; }
+            @Override public long abilityRevision() { return 1; }
+            @Override public String nodeId() { return "macro"; }
+            @Override public String handlerName() { return "execute"; }
+            @Override public SessionContext session() { return session; }
+            @Override public AbilityContext ability() { return shared; }
+            @Override public GlobalContext global() { return shared; }
+            @Override public TypedValueMap arguments() { return TypedValueMap.of(configuration); }
+            @Override public ExecutionControl executionControl() { return execution; }
+            @Override public CurrentSessionControl sessionControl() { return control; }
+            @Override public boolean emit(KuudraEvent event) { emitted.add(event); return true; }
+        };
     }
 
     private static void awaitOperations(RecordingDriver driver, int count) throws InterruptedException {
@@ -161,6 +172,16 @@ class MacroProgramTest {
         @Override public Map<String, Object> snapshot() { Map<String, Object> result = values.get(); onSnapshot.run(); return result; }
         @Override public boolean compareAndSet(Map<String, Object> expected, Map<String, Object> replacement) { return values.compareAndSet(expected, Map.copyOf(replacement)); }
         @Override public Map<String, Object> update(UnaryOperator<Map<String, Object>> operation) { return values.updateAndGet(value -> Map.copyOf(operation.apply(value))); }
+    }
+    private static final class MutableValues implements AbilityContext, GlobalContext {
+        private final AtomicReference<Map<String, Object>> values = new AtomicReference<>(Map.of());
+        @Override public Map<String, Object> snapshot() { return values.get(); }
+        @Override public boolean compareAndSet(Map<String, Object> expected, Map<String, Object> replacement) {
+            return values.compareAndSet(expected, Map.copyOf(replacement));
+        }
+        @Override public Map<String, Object> update(UnaryOperator<Map<String, Object>> operation) {
+            return values.updateAndGet(value -> Map.copyOf(operation.apply(value)));
+        }
     }
     private static final class RecordingDriver implements RobotDriver {
         final List<String> operations = java.util.Collections.synchronizedList(new ArrayList<>()); boolean failMove;

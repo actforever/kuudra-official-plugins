@@ -1,8 +1,7 @@
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
 metadata:
   namespace: macro
   name: keyboard
 spec:
-  component: actforever/jnativehook/jnativehook-keyboard
-  desiredState: running
+  template: actforever/jnativehook/jnativehook-keyboard

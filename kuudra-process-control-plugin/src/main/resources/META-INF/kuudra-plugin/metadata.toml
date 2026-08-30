@@ -1,10 +1,10 @@
 id = "process-control"
 namespace = "actforever"
-version = "0.1.0"
+version = "0.2.0-alpha-1"
 entrypoint = "io.github.actforever.kuudra.processcontrol.ProcessControlPlugin"
 
 [[dependencies]]
 namespace = "actforever"
 pluginId = "windows-native-host"
 mandatory = true
-versionRange = "[0.1.0,0.2.0)"
+versionRange = "[0.2.0-alpha-1,0.3.0)"

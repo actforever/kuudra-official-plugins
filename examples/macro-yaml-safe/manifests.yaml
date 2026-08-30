@@ -1,25 +1,20 @@
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
 metadata: {namespace: macro-demo, name: trigger}
 spec:
-  component: kuudra-official/hello-world/hello-world
-  desiredState: running
+  template: kuudra-official/hello-world/hello-world
   options: {intervalMillis: 500}
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: Ingress
 metadata: {namespace: macro-demo, name: ingress}
-spec:
-  component: kuudra-official/default/plain-ingress
-  desiredState: active
-  options: {groupKey: "${event#hello-world.message}"}
+spec: {template: kuudra-official/default/plain-ingress}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata: {namespace: macro-demo, name: robot}
 spec:
-  component: actforever/awt-robot/awt-robot
-  desiredState: running
+  template: actforever/awt-robot/awt-robot
   options:
     maxTotalSteps: 100
     steps:
@@ -30,25 +25,31 @@ spec:
             eventType: macro.completed
             data: {macro: {result: yaml-executed}}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata: {namespace: macro-demo, name: logger}
-spec:
-  component: kuudra-official/logging/event-logger
-  desiredState: running
-  options:
-    level: INFO
-    message: "Macro result: ${event#macro.result}"
+spec: {template: kuudra-official/logging/event-logger}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: Flow
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
 metadata: {namespace: macro-demo, name: replay}
 spec:
-  imports:
+  resources:
     trigger: {kind: EventSource, name: trigger}
     ingress: {kind: Ingress, name: ingress}
-    robot: {kind: EventHandler, name: robot}
-    logger: {kind: EventHandler, name: logger}
+    robot: {kind: Controller, name: robot}
+    logger: {kind: Controller, name: logger}
+  nodes:
+    trigger: {resource: trigger}
+    ingress:
+      resource: ingress
+      arguments: {groupKey: "${event#hello-world.message}"}
+      session: {mode: CREATE}
+    robot: {resource: robot, handler: execute}
+    logger:
+      resource: logger
+      handler: log
+      arguments: {level: INFO, message: "Macro result: ${event#macro.result}"}
   edges:
     - {from: trigger, to: ingress}
     - {from: ingress, to: robot}

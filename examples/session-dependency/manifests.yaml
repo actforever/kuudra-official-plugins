@@ -1,95 +1,76 @@
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
 metadata: {namespace: dependency-demo, name: window-source}
 spec:
-  component: kuudra-official/session-probe/session-probe-source
-  desiredState: running
+  template: kuudra-official/session-probe/session-probe-source
   options: {role: window, groupKey: window, initialDelayMillis: 0, maxEvents: 1}
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: Ingress
 metadata: {namespace: dependency-demo, name: window-entry}
-spec:
-  component: kuudra-official/conditional-boundary/conditional-ingress
-  desiredState: active
-  options:
-    condition: true
-    groupKey: window
-    sessionLabels: {role: window}
+spec: {template: kuudra-official/conditional-boundary/conditional-ingress}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata: {namespace: dependency-demo, name: window-handler}
-spec:
-  component: kuudra-official/session-probe/session-probe-handler
-  desiredState: running
-  options: {label: window, durationMillis: 3000}
+spec: {template: kuudra-official/session-probe/session-probe}
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
 metadata: {namespace: dependency-demo, name: job-source}
 spec:
-  component: kuudra-official/session-probe/session-probe-source
-  desiredState: running
+  template: kuudra-official/session-probe/session-probe-source
   options: {role: job, groupKey: jobs, initialDelayMillis: 500, intervalMillis: 100, maxEvents: 2}
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: Ingress
 metadata: {namespace: dependency-demo, name: job-entry}
-spec:
-  component: kuudra-official/conditional-boundary/conditional-ingress
-  desiredState: active
-  options:
-    condition: true
-    groupKey: jobs
-    sessionLabels: {role: job}
+spec: {template: kuudra-official/conditional-boundary/conditional-ingress}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata: {namespace: dependency-demo, name: job-handler}
-spec:
-  component: kuudra-official/session-probe/session-probe-handler
-  desiredState: running
-  options: {label: job, durationMillis: 10000}
+spec: {template: kuudra-official/session-probe/session-probe}
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: SessionCoordinationPolicy
-metadata: {namespace: dependency-demo, name: window-parallel}
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
+metadata: {namespace: dependency-demo, name: dependency-ability}
 spec:
-  selector:
-    matchLabels: {role: window}
-  scheduling:
-    policy: PARALLEL
-    maxParallelSessions: 1
-    queueCapacity: 0
----
-apiVersion: kuudra.io/v1alpha1
-kind: SessionCoordinationPolicy
-metadata: {namespace: dependency-demo, name: jobs-in-window}
-spec:
-  selector:
-    matchLabels: {role: job}
-  scheduling:
-    policy: SERIAL
-    maxParallelSessions: 1
-    queueCapacity: 2
-  dependencies:
-    - requiredSessionSelector:
-        matchLabels: {role: window}
-        matchPolicy: UNIQUE
-      terminationPropagation: CANCEL_DEPENDENT
----
-apiVersion: kuudra.io/v1alpha1
-kind: Flow
-metadata: {namespace: dependency-demo, name: dependency-flow}
-spec:
-  imports:
+  resources:
     window-source: {kind: EventSource, name: window-source}
     window-entry: {kind: Ingress, name: window-entry}
-    window-handler: {kind: EventHandler, name: window-handler}
+    window-handler: {kind: Controller, name: window-handler}
     job-source: {kind: EventSource, name: job-source}
     job-entry: {kind: Ingress, name: job-entry}
-    job-handler: {kind: EventHandler, name: job-handler}
+    job-handler: {kind: Controller, name: job-handler}
+  nodes:
+    window-source: {resource: window-source}
+    window-entry:
+      resource: window-entry
+      arguments: {condition: true, groupKey: window, sessionLabels: {role: window}}
+      session:
+        mode: CREATE
+        scheduling: {policy: PARALLEL, groupScope: INGRESS, maxParallelSessions: 1, queueCapacity: 0}
+    window-handler:
+      resource: window-handler
+      handler: hold
+      arguments: {label: window, durationMillis: 3000}
+    job-source: {resource: job-source}
+    job-entry:
+      resource: job-entry
+      arguments: {condition: true, groupKey: jobs, sessionLabels: {role: job}}
+      session:
+        mode: CREATE
+        scheduling: {policy: SERIAL, groupScope: INGRESS, maxParallelSessions: 1, queueCapacity: 2}
+        dependencies:
+          - requiredSessionSelector:
+              matchLabels: {role: window}
+              matchPolicy: UNIQUE
+            terminationPropagation: CANCEL_DEPENDENT
+    job-handler:
+      resource: job-handler
+      handler: hold
+      arguments: {label: job, durationMillis: 10000}
   edges:
     - {from: window-source, to: window-entry}
     - {from: window-entry, to: window-handler}

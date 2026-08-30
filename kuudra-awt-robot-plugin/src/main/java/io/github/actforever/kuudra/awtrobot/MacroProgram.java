@@ -1,7 +1,6 @@
 package io.github.actforever.kuudra.awtrobot;
 
 import io.github.actforever.kuudra.api.KuudraException;
-import io.github.actforever.kuudra.api.action.ActionContext;
 import io.github.actforever.kuudra.api.context.ExecutionDecision;
 import io.github.actforever.kuudra.api.event.*;
 import io.github.actforever.kuudra.interaction.KeySpec;
@@ -14,7 +13,7 @@ final class MacroProgram {
     MacroProgram(MacroProgramDefinition definition) { this.definition = definition; }
     static MacroProgram parse(Map<String,Object> configuration) { return new MacroProgram(MacroCodec.decode(configuration)); }
 
-    void execute(KuudraEvent event, ActionContext context, RobotDriver driver) {
+    void execute(KuudraEvent event, EventHandlerContext context, RobotDriver driver) {
         Frame frame = new Frame(event, context, new InputState(driver, definition.syntheticMarkerLifetimeMillis()), definition.maxTotalSteps());
         try { if (run(definition.steps(), frame) == Signal.BREAK) throw invalid("break may only be used inside a loop"); }
         catch (CancelSignal ignored) { }
@@ -67,8 +66,8 @@ final class MacroProgram {
 
     private enum Signal { CONTINUE, BREAK, RETURN, CANCEL }
     private static final class Frame {
-        final KuudraEvent event; final ActionContext context; final InputState inputs; long remaining;
-        Frame(KuudraEvent event,ActionContext context,InputState inputs,long remaining){this.event=event;this.context=context;this.inputs=inputs;this.remaining=remaining;}
+        final KuudraEvent event; final EventHandlerContext context; final InputState inputs; long remaining;
+        Frame(KuudraEvent event,EventHandlerContext context,InputState inputs,long remaining){this.event=event;this.context=context;this.inputs=inputs;this.remaining=remaining;}
         void consumeStep(){if(--remaining<0)throw invalid("Macro exceeded maxTotalSteps");}
         void checkpoint(){ExecutionDecision decision=context.executionControl().poll();if(decision==ExecutionDecision.CANCEL)throw new CancelSignal();if(decision!=ExecutionDecision.PAUSE)return;inputs.suspend();decision=context.executionControl().checkpoint().toCompletableFuture().join();if(decision==ExecutionDecision.CANCEL)throw new CancelSignal();inputs.resume();}
         void sleep(long millis){if(millis<0)throw invalid("duration must be non-negative");long remaining=millis;while(remaining>0){checkpoint();long chunk=Math.min(remaining,25),before=System.nanoTime();try{Thread.sleep(chunk);}catch(InterruptedException e){Thread.currentThread().interrupt();throw new CancelSignal();}remaining=Math.max(0,remaining-Math.max(1,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-before)));}}

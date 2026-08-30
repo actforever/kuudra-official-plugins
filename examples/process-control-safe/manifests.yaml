@@ -1,47 +1,51 @@
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: EventSource
 metadata: {namespace: process-control-demo, name: trigger}
 spec:
-  component: kuudra-official/session-probe/session-probe-source
-  desiredState: running
+  template: kuudra-official/session-probe/session-probe-source
   options:
     eventType: process-control.trigger
     initialDelayMillis: 5000
     maxEvents: 1
 ---
-apiVersion: kuudra.io/v1alpha1
+apiVersion: kuudra.io/v1alpha2
 kind: Ingress
 metadata: {namespace: process-control-demo, name: ingress}
 spec:
-  component: kuudra-official/default/plain-ingress
-  desiredState: active
-  options: {groupKey: process-control}
+  template: kuudra-official/default/plain-ingress
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: EventHandler
+apiVersion: kuudra.io/v1alpha2
+kind: Controller
 metadata: {namespace: process-control-demo, name: process-control}
 spec:
-  component: actforever/process-control/process-control
-  desiredState: running
+  template: actforever/process-control/process-controller
   options:
     allowElevation: true
     targets:
       ping:
         executablePath: 'C:\Windows\System32\PING.EXE'
-    action: SUSPEND
-    target: ping
-    durationMillis: 2000
     defaultDurationMillis: 10000
     maxDurationMillis: 60000
 ---
-apiVersion: kuudra.io/v1alpha1
-kind: Flow
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
 metadata: {namespace: process-control-demo, name: process-control-safe}
 spec:
-  imports:
+  resources:
     trigger: {kind: EventSource, name: trigger}
     ingress: {kind: Ingress, name: ingress}
-    process-control: {kind: EventHandler, name: process-control}
+    process-control: {kind: Controller, name: process-control}
+  nodes:
+    trigger: {resource: trigger}
+    ingress:
+      resource: ingress
+      arguments: {groupKey: process-control}
+      session:
+        mode: CREATE
+    process-control:
+      resource: process-control
+      handler: suspend
+      arguments: {target: ping, durationMillis: 2000}
   edges:
     - {from: trigger, to: ingress}
     - {from: ingress, to: process-control}

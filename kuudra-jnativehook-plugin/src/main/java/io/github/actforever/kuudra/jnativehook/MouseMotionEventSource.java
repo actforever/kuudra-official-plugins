@@ -4,22 +4,22 @@ import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseMotionListener;
 import io.github.actforever.kuudra.interaction.*;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.ResourceContext;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
-import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.ResourcePolicy;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 import java.util.concurrent.*;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource(value = "jnativehook-mouse-motion",
-        instancePolicy = @InstancePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-motion", threadSafe = true))
-@ComponentDoc(purpose = "Captures global mouse movement with configurable coalescing or throttling.",
+        policy = @ResourcePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-motion", allowParallel = true))
+@ResourceDoc(purpose = "Captures global mouse movement with configurable coalescing or throttling.",
         lifecyclePhases = {"initialize: validate output strategy", "start: create the sampler and attach the motion listener",
                 "pause: detach listener and discard buffered motion", "resume: reattach from a clean sampling window",
                 "stop: discard buffered motion, stop the sampler and release the native hook lease"},
-        configuration = {
+        options = {
                 @SpecProperty(path = "output.strategy", type = MotionOutputStrategy.class,
                         defaultValue = "\"COALESCE\"", allowedValues = {"COALESCE", "THROTTLE", "UNLIMITED"},
                         description = "COALESCE emits the leading and latest positions, THROTTLE emits only the leading position, and UNLIMITED emits every native event.",
@@ -59,8 +59,8 @@ public final class MouseMotionEventSource extends AbstractNativeEventSource impl
         this.detachAction = detachAction;
     }
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
-        output = context.configuration("output", MotionOutputOptions.class, MotionOutputOptions.defaults());
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
+        output = context.option("output", MotionOutputOptions.class, MotionOutputOptions.defaults());
         return super.initialize(context);
     }
 

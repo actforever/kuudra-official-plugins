@@ -1,10 +1,10 @@
 id = "jnativehook"
 namespace = "actforever"
-version = "0.1.1"
+version = "0.2.0-alpha-1"
 entrypoint = "io.github.actforever.kuudra.jnativehook.JNativeHookPlugin"
 
 [[dependencies]]
 namespace = "actforever"
 pluginId = "user-interaction-spec"
 mandatory = true
-versionRange = "[0.1.1,0.2.0)"
+versionRange = "[0.2.0-alpha-1,0.3.0)"

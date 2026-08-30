@@ -9,8 +9,8 @@
    ping -t 127.0.0.1
    ```
 
-3. 将 `manifests.yaml` 放入 `<home>/manifests/`，并在根配置中选择 `process-control-demo` namespace。
-4. 启动 Kuudra 并批准一次 UAC。五秒后，`ping` 输出应暂停约两秒后自动继续。
+3. 将 `manifests.yaml` 放入 `<home>/manifests/`，将 `ability-profiles/default.yaml` 放入同名 home 目录，并合并 `config.yaml` 以选择 `default` Profile。
+4. 启动 Kuudra 并批准一次 UAC。五秒后，Ability 通过 `process-controller` 的 `suspend` 入口让 `ping` 暂停约两秒后自动继续。
 5. 将 `durationMillis` 临时改长，重启后在暂停期间按 Ctrl-C 关闭 Kuudra，确认 `ping` 被提前恢复。
 
 如果系统目录不是 `C:\Windows`，请把清单路径改为 `$env:SystemRoot\System32\PING.EXE` 展开后的绝对路径；清单本身不展开环境变量。

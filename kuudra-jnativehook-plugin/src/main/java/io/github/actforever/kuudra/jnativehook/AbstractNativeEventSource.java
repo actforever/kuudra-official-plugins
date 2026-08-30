@@ -4,10 +4,9 @@ import io.github.actforever.kuudra.api.KuudraException;
 import io.github.actforever.kuudra.api.component.EventSource;
 import io.github.actforever.kuudra.api.event.EventEmitter;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.api.lifecycle.PausableLifecycle;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
-import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
 import io.github.actforever.kuudra.plugin.PluginLogger;
+import io.github.actforever.kuudra.plugin.ResourceContext;
+import io.github.actforever.kuudra.plugin.ResourceLifecycle;
 import io.github.actforever.kuudra.interaction.InjectedInteractionRegistry;
 import io.github.actforever.kuudra.interaction.InteractionEvents;
 import io.github.actforever.kuudra.interaction.InteractionSignature;
@@ -16,7 +15,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-abstract class AbstractNativeEventSource implements EventSource, PausableLifecycle, PluginComponentLifecycle {
+abstract class AbstractNativeEventSource implements EventSource, ResourceLifecycle {
     private final Object lifecycleMonitor = new Object();
     private final NativeHookController hookController;
     private volatile EventEmitter emitter;
@@ -28,9 +27,9 @@ abstract class AbstractNativeEventSource implements EventSource, PausableLifecyc
     AbstractNativeEventSource() { this(SharedNativeHookController.INSTANCE); }
     AbstractNativeEventSource(NativeHookController hookController) { this.hookController = Objects.requireNonNull(hookController); }
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
         logger = context.logger();
-        String policy = context.configuration("syntheticEventPolicy", String.class, SyntheticEventPolicy.DROP.name());
+        String policy = context.option("syntheticEventPolicy", String.class, SyntheticEventPolicy.DROP.name());
         try { syntheticEventPolicy = SyntheticEventPolicy.valueOf(policy.toUpperCase(java.util.Locale.ROOT)); }
         catch (IllegalArgumentException error) { return CompletableFuture.failedFuture(new KuudraException("Unsupported syntheticEventPolicy: " + policy, error)); }
         return CompletableFuture.completedFuture(null);

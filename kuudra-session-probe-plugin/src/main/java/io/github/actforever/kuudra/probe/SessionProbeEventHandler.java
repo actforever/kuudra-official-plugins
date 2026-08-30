@@ -1,29 +1,28 @@
 package io.github.actforever.kuudra.probe;
 
-import io.github.actforever.kuudra.api.action.ActionContext;
-import io.github.actforever.kuudra.api.component.EventHandler;
+import io.github.actforever.kuudra.api.event.EventHandlerContext;
 import io.github.actforever.kuudra.api.context.ExecutionDecision;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
 import io.github.actforever.kuudra.plugin.*;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 import java.util.concurrent.*;
 
-@io.github.actforever.kuudra.plugin.annotation.EventHandler("session-probe-handler")
-@ComponentDoc(purpose = "Keeps a Session lease for a configured duration and reports completion or cooperative cancellation.",
+@io.github.actforever.kuudra.plugin.annotation.Controller("session-probe")
+@ResourceDoc(purpose = "Keeps a Session lease for a configured duration and reports completion or cooperative cancellation.",
         lifecyclePhases = {"initialize: create the probe timer", "handle: checkpoint until duration or cancellation", "destroy: stop the timer"},
-        configuration = {
+        arguments = {
                 @SpecProperty(path = "durationMillis", type = Long.class, defaultValue = "1000", description = "How long the handler keeps the Session lease."),
                 @SpecProperty(path = "checkpointIntervalMillis", type = Long.class, defaultValue = "25", description = "Maximum delay before observing pause or cancellation."),
                 @SpecProperty(path = "label", type = String.class, defaultValue = "\"probe\"", description = "Label included in diagnostic plugin logs.")
         })
-public final class SessionProbeEventHandler implements EventHandler, PluginComponentLifecycle {
+public final class SessionProbeEventHandler implements ResourceLifecycle {
     private volatile ScheduledExecutorService scheduler;
     private PluginLogger logger;
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
         logger = context.logger();
         scheduler = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "kuudra-session-probe-handler");
@@ -33,10 +32,11 @@ public final class SessionProbeEventHandler implements EventHandler, PluginCompo
         return CompletableFuture.completedFuture(null);
     }
 
-    @Override public CompletionStage<Void> handle(KuudraEvent event, ActionContext context) {
-        long duration = context.configuration("durationMillis", Long.class, 1_000L);
-        long checkpointInterval = context.configuration("checkpointIntervalMillis", Long.class, 25L);
-        String label = context.configuration("label", String.class, "probe");
+    @io.github.actforever.kuudra.plugin.annotation.EventHandler("hold")
+    public CompletionStage<Void> handle(KuudraEvent event, EventHandlerContext context) {
+        long duration = context.arguments().getOrDefault("durationMillis", Long.class, 1_000L);
+        long checkpointInterval = context.arguments().getOrDefault("checkpointIntervalMillis", Long.class, 25L);
+        String label = context.arguments().getOrDefault("label", String.class, "probe");
         if (duration < 0 || checkpointInterval < 1) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("durationMillis must be >= 0 and checkpointIntervalMillis must be > 0"));
         }
@@ -46,7 +46,7 @@ public final class SessionProbeEventHandler implements EventHandler, PluginCompo
         return result;
     }
 
-    private void checkpoint(ActionContext context, KuudraEvent event, String label, long deadline,
+    private void checkpoint(EventHandlerContext context, KuudraEvent event, String label, long deadline,
                             long intervalMillis, CompletableFuture<Void> result) {
         context.executionControl().checkpoint().whenComplete((decision, error) -> {
             if (error != null) {
@@ -69,8 +69,8 @@ public final class SessionProbeEventHandler implements EventHandler, PluginCompo
         });
     }
 
-    private static Map<String, Object> fields(ActionContext context, KuudraEvent event, String label) {
-        return Map.of("label", label, "flowId", context.flowId(), "sessionId", context.sessionId(),
+    private static Map<String, Object> fields(EventHandlerContext context, KuudraEvent event, String label) {
+        return Map.of("label", label, "abilityId", context.abilityId(), "sessionId", context.sessionId(),
                 "eventId", event.id(), "eventType", event.type());
     }
 

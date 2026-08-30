@@ -3,14 +3,14 @@ package io.github.actforever.kuudra.conditionalboundary;
 import io.github.actforever.kuudra.api.component.IngressDecision;
 import io.github.actforever.kuudra.api.context.EventContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
 @io.github.actforever.kuudra.plugin.annotation.Ingress("conditional-ingress")
-@ComponentDoc(purpose = "Admits an Event only when a resolved condition matches, then assigns its Session group and labels.",
-        configuration = {
+@ResourceDoc(purpose = "Admits an Event only when a resolved condition matches, then assigns its Session group and labels.",
+        arguments = {
                 @SpecProperty(path = "condition", type = Object.class, required = true,
                         description = "Actual value to evaluate; Kuudra placeholders may read Event, Flow, or Global scope.",
                         examples = {"true", "\"enabled\"", "3"}),
@@ -28,7 +28,8 @@ import java.util.Map;
                         description = "String labels assigned to the admitted Session and used by SessionCoordinationPolicy selectors.",
                         examples = {"{\"role\":\"job\"}", "{\"role\":\"window\",\"device\":\"keyboard-1\"}"})
         })
-public final class ConditionalIngress implements io.github.actforever.kuudra.api.component.Ingress {
+public final class ConditionalIngress implements io.github.actforever.kuudra.api.component.Ingress,
+        io.github.actforever.kuudra.plugin.ResourceLifecycle {
     @Override
     public IngressDecision admit(KuudraEvent event, EventContext context) {
         if (!ConditionSupport.matches(context.configuration())) return IngressDecision.reject("condition-not-matched");

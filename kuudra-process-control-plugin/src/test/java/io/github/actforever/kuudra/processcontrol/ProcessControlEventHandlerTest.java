@@ -1,8 +1,9 @@
 package io.github.actforever.kuudra.processcontrol;
 
-import io.github.actforever.kuudra.api.action.ActionContext;
 import io.github.actforever.kuudra.api.context.*;
+import io.github.actforever.kuudra.api.event.EventHandlerContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
+import io.github.actforever.kuudra.api.session.CurrentSessionControl;
 import io.github.actforever.kuudra.windowshost.*;
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +22,8 @@ class ProcessControlEventHandlerTest {
         ProcessControlEventHandler handler = new ProcessControlEventHandler(lease, configuration(), scheduler);
         try {
             handler.start().toCompletableFuture().join();
-            CompletableFuture<Void> handled = handler.handle(KuudraEvent.of("test", Map.of()), context(ExecutionDecision.CONTINUE,
-                    Map.of("action", "SUSPEND", "target", "test", "durationMillis", 500L))).toCompletableFuture();
+            CompletableFuture<Void> handled = handler.suspend(KuudraEvent.of("test", Map.of()), context(ExecutionDecision.CONTINUE,
+                    Map.of("target", "test", "durationMillis", 500L))).toCompletableFuture();
             assertFalse(handled.isDone());
             lease.complete(ProcessOperationOutcome.EXPIRED);
             handled.get(1, TimeUnit.SECONDS);
@@ -38,8 +39,8 @@ class ProcessControlEventHandlerTest {
         ProcessControlEventHandler handler = new ProcessControlEventHandler(lease, configuration(), scheduler);
         try {
             handler.start().toCompletableFuture().join();
-            handler.handle(KuudraEvent.of("test", Map.of()), context(ExecutionDecision.CANCEL,
-                    Map.of("action", "SUSPEND", "target", "test", "durationMillis", 500L)))
+            handler.suspend(KuudraEvent.of("test", Map.of()), context(ExecutionDecision.CANCEL,
+                    Map.of("target", "test", "durationMillis", 500L)))
                     .toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertEquals(1, lease.resumes.get());
         } finally {
@@ -53,10 +54,29 @@ class ProcessControlEventHandlerTest {
                 500, 1_000);
     }
 
-    private static ActionContext context(ExecutionDecision decision, Map<String, Object> configuration) {
+    private static EventHandlerContext context(ExecutionDecision decision, Map<String, Object> arguments) {
         ExecutionControl control = () -> decision;
-        return new ActionContext(UUID.randomUUID(), "test", Map.of(), null, control, ignored -> true,
-                Map.of(), configuration);
+        UUID sessionId = UUID.randomUUID(); StaticContext values = new StaticContext();
+        return new EventHandlerContext() {
+            @Override public UUID sessionId() { return sessionId; }
+            @Override public String abilityId() { return "test/process"; }
+            @Override public long abilityRevision() { return 1; }
+            @Override public String nodeId() { return "suspend"; }
+            @Override public String handlerName() { return "suspend"; }
+            @Override public SessionContext session() { return values; }
+            @Override public AbilityContext ability() { return values; }
+            @Override public GlobalContext global() { return values; }
+            @Override public TypedValueMap arguments() { return TypedValueMap.of(arguments); }
+            @Override public ExecutionControl executionControl() { return control; }
+            @Override public CurrentSessionControl sessionControl() { return CurrentSessionControl.unavailable(sessionId); }
+            @Override public boolean emit(KuudraEvent event) { return true; }
+        };
+    }
+
+    private static final class StaticContext implements SessionContext, AbilityContext, GlobalContext {
+        @Override public Map<String, Object> snapshot() { return Map.of(); }
+        @Override public boolean compareAndSet(Map<String, Object> expected, Map<String, Object> replacement) { return false; }
+        @Override public Map<String, Object> update(java.util.function.UnaryOperator<Map<String, Object>> operation) { return Map.of(); }
     }
 
     private static final class FakeLease implements ProcessControlLease {

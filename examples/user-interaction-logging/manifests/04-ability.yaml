@@ -1,0 +1,26 @@
+apiVersion: kuudra.io/v1alpha2
+kind: Ability
+metadata: {namespace: macro, name: keyboard-to-log}
+spec:
+  resources:
+    keyboard: {kind: EventSource, name: keyboard}
+    ingress: {kind: Ingress, name: input-ingress}
+    logger: {kind: Controller, name: input-logger}
+  nodes:
+    keyboard: {resource: keyboard}
+    ingress:
+      resource: ingress
+      arguments: {groupKey: "${event#user-interaction.key.code}"}
+      session:
+        mode: CREATE
+        scheduling: {policy: PARALLEL, groupScope: INGRESS, maxParallelSessions: 16, queueCapacity: 64}
+    logger:
+      resource: logger
+      handler: log
+      arguments:
+        level: INFO
+        message: "Keyboard ${event#user-interaction.phase}: ${event#user-interaction.key.code}"
+        includeData: true
+  edges:
+    - {from: keyboard, to: ingress}
+    - {from: ingress, to: logger}

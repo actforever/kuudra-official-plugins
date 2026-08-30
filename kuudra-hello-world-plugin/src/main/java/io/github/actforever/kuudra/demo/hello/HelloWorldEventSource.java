@@ -5,8 +5,8 @@ import io.github.actforever.kuudra.api.event.EventData;
 import io.github.actforever.kuudra.api.event.EventEmitter;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
 import io.github.actforever.kuudra.api.KuudraException;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
-import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
+import io.github.actforever.kuudra.plugin.ResourceContext;
+import io.github.actforever.kuudra.plugin.ResourceLifecycle;
 
 import java.util.Map;
 import java.util.Objects;
@@ -18,10 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource("hello-world")
-@io.github.actforever.kuudra.plugin.annotation.ComponentDoc(
+@io.github.actforever.kuudra.plugin.annotation.ResourceDoc(
         purpose = "按配置周期产生最小 Hello World 事件。",
         lifecyclePhases = {"initialize: 读取 intervalMillis", "start: 启动周期任务", "stop: 释放调度线程"},
-        configuration = @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
+        options = @io.github.actforever.kuudra.plugin.annotation.SpecProperty(
                 path = "intervalMillis", type = Long.class, defaultValue = "1000",
                 description = "相邻两次 hello-world 事件之间的固定延迟，单位毫秒，必须大于 0。",
                 examples = {"1000", "5000"}),
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 stage = "每个调度周期", eventType = "hello-world.tick",
                 description = "产生 message=hello-world 的事件。",
                 dataExample = "{\"hello-world\":{\"message\":\"hello-world\"}}"))
-public final class HelloWorldEventSource implements EventSource, PluginComponentLifecycle {
+public final class HelloWorldEventSource implements EventSource, ResourceLifecycle {
     public static final String EVENT_TYPE = "hello-world.tick";
     public static final String DATA_NAMESPACE = "hello-world";
     public static final String MESSAGE_KEY = "message";
@@ -41,13 +41,16 @@ public final class HelloWorldEventSource implements EventSource, PluginComponent
     private volatile ScheduledExecutorService scheduler;
 
     @Override
-    public CompletionStage<Void> initialize(PluginComponentContext context) {
-        intervalMillis = context.configuration("intervalMillis", Long.class, DEFAULT_INTERVAL_MILLIS);
+    public CompletionStage<Void> initialize(ResourceContext context) {
+        intervalMillis = context.option("intervalMillis", Long.class, DEFAULT_INTERVAL_MILLIS);
         if (intervalMillis < 1) throw new KuudraException("intervalMillis must be positive");
         return CompletableFuture.completedFuture(null);
     }
 
-    @Override public void setEmitter(EventEmitter emitter) { this.emitter = Objects.requireNonNull(emitter, "emitter"); }
+    @Override
+    public void setEmitter(EventEmitter emitter) {
+        this.emitter = Objects.requireNonNull(emitter, "emitter");
+    }
 
     @Override
     public CompletionStage<Void> start() {

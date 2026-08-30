@@ -4,18 +4,18 @@ import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelListener;
 import io.github.actforever.kuudra.interaction.*;
-import io.github.actforever.kuudra.plugin.annotation.ComponentDoc;
+import io.github.actforever.kuudra.plugin.annotation.ResourceDoc;
 import io.github.actforever.kuudra.plugin.annotation.EventEmission;
-import io.github.actforever.kuudra.plugin.annotation.InstancePolicy;
+import io.github.actforever.kuudra.plugin.annotation.ResourcePolicy;
 import io.github.actforever.kuudra.plugin.annotation.SpecProperty;
 
 import java.util.Map;
 
 @io.github.actforever.kuudra.plugin.annotation.EventSource(value = "jnativehook-mouse-wheel",
-        instancePolicy = @InstancePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-wheel", threadSafe = true))
-@ComponentDoc(purpose = "Captures global mouse-wheel events as platform-neutral direction and amount values.",
+        policy = @ResourcePolicy(maxInstances = 1, exclusivityDomain = "actforever/jnativehook-mouse-wheel", allowParallel = true))
+@ResourceDoc(purpose = "Captures global mouse-wheel events as platform-neutral direction and amount values.",
         lifecyclePhases = {"start: attach wheel listener", "pause: detach listener", "resume: reattach listener", "stop: release listener and native hook lease"},
-        configuration = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
+        options = @SpecProperty(path = "syntheticEventPolicy", type = String.class, defaultValue = "\"DROP\"",
                 allowedValues = {"DROP", "EMIT"}, description = "Drop matching in-process simulated input or emit it with synthetic=true."),
         emittedEvents = @EventEmission(stage = "native mouse wheel", eventType = InteractionEvents.MOUSE_WHEEL_SCROLLED,
                 dataExample = "{\"user-interaction\":{\"wheel\":{\"direction\":\"DOWN\",\"amount\":1},\"position\":{\"x\":10,\"y\":20,\"coordinateSpace\":\"SCREEN\"},\"phase\":\"SCROLLED\"}}"))

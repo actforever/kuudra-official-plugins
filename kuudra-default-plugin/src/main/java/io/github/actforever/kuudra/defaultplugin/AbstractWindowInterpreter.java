@@ -3,8 +3,8 @@ package io.github.actforever.kuudra.defaultplugin;
 import io.github.actforever.kuudra.api.context.EventContext;
 import io.github.actforever.kuudra.api.event.EventData;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
-import io.github.actforever.kuudra.plugin.PluginComponentContext;
-import io.github.actforever.kuudra.plugin.PluginComponentLifecycle;
+import io.github.actforever.kuudra.plugin.ResourceContext;
+import io.github.actforever.kuudra.plugin.ResourceLifecycle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractWindowInterpreter implements io.github.actforever.kuudra.api.component.EventInterpreter, PluginComponentLifecycle {
+abstract class AbstractWindowInterpreter implements io.github.actforever.kuudra.api.component.EventInterpreter, ResourceLifecycle {
     protected String outputType;
     protected long timeoutMs;
     protected boolean includeMatchedEvents;
@@ -27,13 +27,13 @@ abstract class AbstractWindowInterpreter implements io.github.actforever.kuudra.
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> timeout;
 
-    @Override public CompletionStage<Void> initialize(PluginComponentContext context) {
-        outputType = context.configuration("outputType", String.class);
-        timeoutMs = context.configuration("timeoutMs", Long.class, 3000L);
-        includeMatchedEvents = context.configuration("includeMatchedEvents", Boolean.class, true);
+    @Override public CompletionStage<Void> initialize(ResourceContext context) {
+        outputType = context.option("outputType", String.class);
+        timeoutMs = context.option("timeoutMs", Long.class, 3000L);
+        includeMatchedEvents = context.option("includeMatchedEvents", Boolean.class, true);
         if (timeoutMs <= 0) throw new IllegalArgumentException("timeoutMs must be positive");
-        requirements = parseRequirements(context.configuration("requirements", List.class));
-        forbidden = parseSelectors(context.configuration("forbidden", List.class, List.of()));
+        requirements = parseRequirements(context.option("requirements", List.class));
+        forbidden = parseSelectors(context.option("forbidden", List.class, List.of()));
         return CompletableFuture.completedFuture(null);
     }
 

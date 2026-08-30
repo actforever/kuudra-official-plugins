@@ -4,12 +4,13 @@ import io.github.actforever.kuudra.api.context.EventContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
 import io.github.actforever.kuudra.plugin.annotation.*;
 @Ingress("plain-ingress")
-@ComponentDoc(purpose="Unconditionally admits every incoming Event into the session domain and selects its session group.",
-        configuration={
+@ResourceDoc(purpose="Unconditionally admits every incoming Event into the session domain and selects its session group.",
+        arguments={
                 @SpecProperty(path="groupKey", type=String.class, description="Session group key; defaults to the Event type.", examples={"\"keyboard\"", "\"device-1\""}),
                 @SpecProperty(path="sessionLabels", type=java.util.Map.class, description="String labels used for automatic SessionCoordinationPolicy selection.", examples={"{\"role\":\"window\"}"})
         })
-public final class PlainIngress implements io.github.actforever.kuudra.api.component.Ingress {
+public final class PlainIngress implements io.github.actforever.kuudra.api.component.Ingress,
+        io.github.actforever.kuudra.plugin.ResourceLifecycle {
     @Override public IngressDecision admit(KuudraEvent event, EventContext context) {
         Object configured = context.configuration().get("sessionLabels");
         java.util.Map<String, String> labels = configured == null ? java.util.Map.of() : labels(configured);

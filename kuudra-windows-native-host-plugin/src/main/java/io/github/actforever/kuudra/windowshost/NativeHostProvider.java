@@ -133,7 +133,7 @@ final class NativeHostProvider implements WindowsNativeHost.Provider {
     }
 
     private Path extractHost() throws Exception {
-        Path directory = home.resolve("native").resolve("0.1.0").resolve("win-x64");
+        Path directory = home.resolve("native").resolve("0.2.0-alpha-1").resolve("win-x64");
         Files.createDirectories(directory);
         Path executable = directory.resolve("Kuudra.Windows.PrivilegedHost.exe");
         byte[] expectedBytes;

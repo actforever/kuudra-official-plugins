@@ -1,8 +1,8 @@
 package io.github.actforever.kuudra.macro;
 
-import io.github.actforever.kuudra.api.action.ActionContext;
 import io.github.actforever.kuudra.api.context.ContextValueReference;
 import io.github.actforever.kuudra.api.event.EventDomain;
+import io.github.actforever.kuudra.api.event.EventHandlerContext;
 import io.github.actforever.kuudra.api.event.KuudraEvent;
 import java.math.BigDecimal;
 import java.util.*;
@@ -10,7 +10,7 @@ import java.util.*;
 public record MacroCondition(String referenceExpression, ContextValueReference reference, Operator operator, Object expected) {
     public enum Operator { EXISTS, NOT_EXISTS, TRUTHY, FALSY, EQUALS, NOT_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, LESS_THAN, LESS_THAN_OR_EQUALS, IN, NOT_IN, MATCHES_REGEX }
     public static MacroCondition ref(String path, Operator operator, Object expected) { return new MacroCondition(path, ContextValueReference.compile(path, EventDomain.SESSION), operator, expected); }
-    public boolean matches(KuudraEvent event, ActionContext context) {
+    public boolean matches(KuudraEvent event, EventHandlerContext context) {
         Optional<Object> actual = reference.find(event, context);
         return switch (operator) {
             case EXISTS -> actual.isPresent(); case NOT_EXISTS -> actual.isEmpty();
